@@ -1,0 +1,8 @@
+{
+  "name": "playzone",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Virtual-coin games with OTP/Google login and an admin panel. Zero dependencies.",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" }
+}

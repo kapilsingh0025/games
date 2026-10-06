@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PlayZone</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f0ff;--card:#fff;--tx:#1a1533;--mu:#6c6592;--bd:#ddd6f7;--ac:#7c3aed;--go:#f5a300;--pk:#e11d74;--ok:#0e9f6e;--no:#dc2626;--l:93%;--sl:75%;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c0a1d;--card:#171330;--tx:#f1ecff;--mu:#9d95c7;--bd:#2c2552;--ac:#a78bfa;--go:#ffc83d;--pk:#ff5c9d;--l:17%;--sl:55%}}
+:root[data-theme="dark"]{--bg:#0c0a1d;--card:#171330;--tx:#f1ecff;--mu:#9d95c7;--bd:#2c2552;--ac:#a78bfa;--go:#ffc83d;--pk:#ff5c9d;--l:17%;--sl:55%}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 Sora,system-ui,sans-serif}
+main{max-width:960px;margin:0 auto;padding:14px}h2{margin:0 0 6px;font-size:20px}
+button{font:inherit;cursor:pointer;border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:8px 14px;border-radius:10px;transition:transform .1s}
+button:active{transform:scale(.97)}button:focus-visible,input:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+button.p{background:linear-gradient(90deg,var(--go),var(--pk));border:0;color:#1a0b1f;font-weight:800}
+button.on{background:var(--ac);border-color:var(--ac);color:#fff}button.d{color:var(--no)}
+input{font:inherit;padding:9px 11px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);width:100%}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px;margin-bottom:14px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.logo{font-weight:800;font-size:24px;background:linear-gradient(90deg,var(--go),var(--pk));-webkit-background-clip:text;background-clip:text;color:transparent}
+.pill{background:var(--card);border:1px solid var(--bd);border-radius:99px;padding:6px 14px;font-weight:800;color:var(--go)}
+.hero{background:linear-gradient(120deg,var(--ac),var(--pk));color:#fff;border-radius:16px;padding:16px;margin-bottom:14px;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.gc{background:hsl(var(--h) var(--sl) var(--l));border:1px solid hsl(var(--h) 60% 55%/.4);text-align:left;padding:14px;border-radius:16px;min-height:104px}
+.gc i{font-style:normal;font-size:34px;display:block}.gc b{display:block;margin-top:4px}.gc small{color:var(--mu)}
+.tabs,.row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.tabs button{flex:1}
+.mu{color:var(--mu);font-size:13px}.ok{color:var(--ok)}.no{color:var(--no)}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:330px}.tile{height:70px;font-size:20px;font-weight:800}.tile.hit{background:var(--go);color:#1a0b1f}
+.strip{display:flex;flex-wrap:wrap;gap:6px}.sg{padding:10px 12px;border-radius:10px;border:1px solid var(--bd);min-width:56px;text-align:center}.sg.hit{background:var(--go);color:#1a0b1f;font-weight:800}
+.reel{font-size:44px;background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:6px 14px}.big{font-size:42px;font-weight:800;color:var(--go)}
+.res{font-size:18px;font-weight:800;margin-top:10px;min-height:26px}
+.wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px}td,th{padding:8px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
+.auth{max-width:420px;margin:6vh auto 0}.info{background:var(--bg);border:1px dashed var(--ac);border-radius:10px;padding:8px 10px;margin:8px 0;font-size:13px}
+a{color:var(--ac);cursor:pointer}
+</style></head><body><main id="app"></main>
+<script>
+const $=s=>document.querySelector(s),R=Math.round,rnd=n=>Math.floor(Math.random()*n),E=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const G=[
+{id:'coin',n:'Coin Flip',ic:'🪙',h:42,k:'pick',o:['Heads','Tails']},{id:'oe',n:'Odd or Even',ic:'🎱',h:200,k:'pick',o:['Odd','Even']},
+{id:'rb',n:'Red or Black',ic:'♠️',h:350,k:'pick',o:['Red','Black']},{id:'dice',n:'Dice Roll',ic:'🎲',h:160,k:'pick',o:['Over 50','Under 50']},
+{id:'rps',n:'Rock Paper Scissors',ic:'✂️',h:280,k:'pick',o:['Rock','Paper','Scissors']},{id:'num',n:'Lucky Number',ic:'🔢',h:20,k:'pick',o:['1','2','3','4','5']},
+{id:'scr',n:'Scratch Card',ic:'🎟️',h:320,k:'tiles',t:[0,0,0,1,2,2.7]},{id:'box',n:'Mystery Box',ic:'🎁',h:12,k:'tiles',t:[0,0,1.5,2.3]},
+{id:'tre',n:'Treasure Hunt',ic:'🗺️',h:95,k:'tiles',t:[0,0,0,0,.5,1,1.5,2,3.5]},{id:'orb',n:'Orbit Spin',ic:'🪐',h:255,k:'wheel',t:[0,.5,1,1.5,0,2.5]},
+{id:'whl',n:'Lucky Wheel',ic:'🎡',h:50,k:'wheel',t:[0,0,.5,1,1.5,2,0,2.5]},{id:'pli',n:'Plinko',ic:'🔴',h:0,k:'wheel',bin:1,t:[4,1.8,.7,.3,.7,1.8,4]},
+{id:'slt',n:'Slot Machine',ic:'🎰',h:300,k:'slots'},{id:'crs',n:'Crash Rocket',ic:'🚀',h:190,k:'crash',o:[1.5,2,3,5]}];
+const SY=['🍒','🍋','🔔','⭐','7️⃣'],PACKS=[500,2500,10000];
+let GCID='',TOKEN='',DB={users:[],reqs:[],tx:[],st:{w:0,p:0},cfg:{notice:'',edge:0,signup:0,daily:0,games:{}}},ses=null,ut='games',gid=null,auth={tab:'email',sent:0,to:'',err:'',info:''},at='ov',bet=50,pk=0,rev=null,tp=-1,hit=-1,reels=[0,1,2],cxv='1.00x',res=null,busy=false,ready=false;
+try{TOKEN=localStorage.getItem('pzt')||''}catch(e){}
+const U=()=>ses&&DB.users.find(u=>u.id===ses.uid),GM=()=>G.find(g=>g.id===gid);
+async function api(p,b){try{const r=await fetch('/api'+p,{method:b?'POST':'GET',headers:{'Content-Type':'application/json',Authorization:'Bearer '+TOKEN},body:b?JSON.stringify(b):undefined});return await r.json()}catch(x){return{ok:false,err:'Network error. Check your connection.'}}}
+function setTok(t){TOKEN=t;try{t?localStorage.setItem('pzt',t):localStorage.removeItem('pzt')}catch(e){}}
+async function sync(){if(TOKEN){const d=await api('/state');if(d.ok){DB=d.db;ses={role:d.role,uid:d.uid}}else{setTok('');ses=null}}else ses=null;ready=true;render()}
+const setUt=k=>{ut=k;render()},setAt=k=>{at=k;render()},adm=(p,b)=>api(p,b).then(sync);
+function setT(t){auth={tab:t,sent:0,to:'',err:'',info:''};render()}
+async function sendOtp(){const to=$('#to').value.trim(),em=auth.tab==='email';
+ if(em?!/^\S+@\S+\.\S+$/.test(to):!/^\+?\d{8,15}$/.test(to)){auth.err=em?'Enter a valid email address.':'Enter a phone number with country code.';return render()}
+ const d=await api('/otp/send',{channel:auth.tab,to});
+ if(!d.ok){auth.err=d.err||'Could not send OTP.';return render()}
+ auth={tab:auth.tab,sent:1,to,err:'',info:'OTP sent to '+to+'.'+(d.dev?' Dev OTP: '+d.dev:'')};render()}
+async function verify(){const d=await api('/otp/verify',{channel:auth.tab,to:auth.to,code:$('#code').value.trim()});
+ if(!d.ok){auth.err=d.err||'Wrong or expired OTP.';return render()}
+ setTok(d.token);auth={tab:'email',sent:0,to:'',err:'',info:''};ut='games';gid=null;sync()}
+async function adminLogin(){const d=await api('/admin/login',{email:$('#ae').value.trim(),password:$('#ap').value});
+ if(!d.ok){auth.err=d.err||'Wrong admin email or password.';return render()}setTok(d.token);at='ov';sync()}
+function logout(){setTok('');gid=null;sync()}
+function openGame(id){gid=id;pk=0;rev=null;tp=-1;hit=-1;res=null;render()}
+function anim(n,ms,f,done){let i=0;const t=setInterval(()=>{try{f(i++)}catch(e){}if(i>n){clearInterval(t);done()}},ms)}
+async function play(i){if(busy)return;const g=GM(),b=Math.floor(+$('#bet').value)||0;bet=b;busy=true;res=null;
+ const d=await api('/play',{game:g.id,bet:b,pick:pk,tile:i});
+ if(!d.ok){busy=false;res={ok:false,t:d.err||'Could not play.'};return render()}
+ const o=d.o,done=txt=>{res={ok:d.w>b,t:(d.w>b?'You won '+(d.w-b)+' coins. ':d.w===b?'Your bet came back. ':'You lost '+b+' coins. ')+txt};busy=false;sync()};
+ if(g.k==='pick')return done('Result: '+g.o[o.out]);
+ if(g.k==='tiles'){rev=o.rev;tp=o.tp;return done('Tile '+(o.tp+1)+' held '+o.rev[o.tp]+'x')}
+ if(g.k==='wheel')return anim(14+o.idx,80,k=>{hit=k%g.t.length;document.querySelectorAll('.sg').forEach((s,j)=>s.classList.toggle('hit',j===hit))},()=>{hit=o.idx;done('Landed on '+g.t[o.idx]+'x')});
+ if(g.k==='slots')return anim(10,90,()=>{for(let k=0;k<3;k++)$('#r'+k).textContent=SY[rnd(5)]},()=>{reels=o.reels;done(d.w>=b*10?'Jackpot!':d.w?'Two match':'No match')});
+ if(g.k==='crash')return anim(16,70,k=>{cxv=Math.pow(o.cp,Math.min(k,16)/16).toFixed(2)+'x';$('#cx').textContent=cxv},()=>{cxv=o.cp.toFixed(2)+'x';done('Crashed at '+cxv)})}
+const daily=()=>adm('/daily',{}),recharge=c=>adm('/recharge',{coins:c}),dec=(id,ok)=>adm('/admin/resolve',{id,ok:!!ok}),adj=(id,d)=>adm('/admin/adjust',{id,d}),ban=id=>adm('/admin/ban',{id}),del=id=>adm('/admin/delete',{id}),tg=id=>adm('/admin/game',{id,on:!DB.cfg.games[id].on}),mx=(id,v)=>api('/admin/game',{id,max:+v}),wpSet=(id,v)=>{if(DB.cfg.games[id])DB.cfg.games[id].wp=v===null?null:+v;return api('/admin/game',{id,wp:v===null?null:+v}).then(sync)},wpAll=v=>api('/admin/gameall',{wp:v===null?null:+v}).then(sync),wpLbl=(id,v)=>{const e=document.getElementById('wl-'+id);if(e)e.textContent=v+'%'},cf=(k,v)=>api('/admin/cfg',{k,v}),wipe=()=>{if(confirm('Delete all users, history and settings?'))adm('/admin/reset',{})};
+const tb=(l,cur,fn)=>`<div class="tabs">${l.map(([k,t])=>`<button class="${cur===k?'on':''}" onclick="${fn}('${k}')">${t}</button>`).join('')}</div>`;
+const tbl=(h,r)=>r.length?`<div class="wrap"><table><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr>${r.map(x=>`<tr>${x.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</table></div>`:'<p class="mu">Nothing here yet.</p>';
+function authH(){const inf=auth.info?`<div class="info">${E(auth.info)}</div>`:'',er=auth.err?`<div class="no">${E(auth.err)}</div>`:'',t=auth.tab;let b;
+ if(t==='admin')b=`<p class="mu">Admin sign in. The email and password are set in the server .env file.</p><div class="row"><input id="ae" type="email" placeholder="Admin email" autocomplete="username"></div><div class="row"><input id="ap" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')adminLogin()"></div>${er}<div class="row"><button class="p" onclick="adminLogin()">Sign in as admin</button></div>`;
+ else if(t==='google')b=GCID?`<div id="gbtn" style="margin:12px 0"></div>${er}`:`<p class="mu">Google sign-in isn't set up on this server yet. Add GOOGLE_CLIENT_ID to the .env file.</p>`;
+ else if(auth.sent)b=`${inf}<div class="row"><input id="code" inputmode="numeric" maxlength="6" placeholder="6-digit OTP" onkeydown="if(event.key==='Enter')verify()"></div>${er}<div class="row"><button class="p" onclick="verify()">Verify and continue</button><button onclick="setT(auth.tab)">Change</button></div>`;
+ else b=`<div class="row"><input id="to" type="${t==='email'?'email':'tel'}" placeholder="${t==='email'?'you@example.com':'+91 98765 43210'}" onkeydown="if(event.key==='Enter')sendOtp()"></div>${er}<div class="row"><button class="p" onclick="sendOtp()">Send OTP</button></div>`;
+ return`<div class="auth card"><div class="logo">PlayZone</div><p class="mu">14 games. Virtual coins only. Sign up or log in.</p>${tb([['email','Email OTP'],['phone','Phone OTP'],['google','Google'],['admin','Admin']],t,'setT')}${b}</div>`}
+function panel(){const g=GM(),c=DB.cfg.games[g.id],e=1-DB.cfg.edge/100;
+ let h=`<button onclick="gid=null;render()">All games</button><div class="card" style="margin-top:10px"><h2>${g.ic} ${g.n}</h2><div class="mu">Max bet ${c.max} coins${c.on?'':' · switched off'}</div><div class="row"><input id="bet" type="number" min="10" value="${bet}" style="max-width:110px" aria-label="Bet"><button onclick="$('#bet').value=50">50</button><button onclick="$('#bet').value=100">100</button><button onclick="$('#bet').value=500">500</button></div>`;
+ if(g.k==='pick')h+=`<div class="row">${g.o.map((o,i)=>`<button class="${pk===i?'on':''}" onclick="pk=${i};render()">${o}</button>`).join('')}</div><button class="p" onclick="play()">Play · pays ${(g.o.length*e).toFixed(2)}x</button>`;
+ if(g.k==='tiles')h+=`<p class="mu">Pick a tile. Each hides a multiplier.</p><div class="tiles">${g.t.map((_,i)=>`<button class="tile ${tp===i?'hit':''}" onclick="play(${i})">${rev?rev[i]+'x':'?'}</button>`).join('')}</div>`;
+ if(g.k==='wheel')h+=`<div class="strip">${g.t.map((m,i)=>`<span class="sg ${hit===i?'hit':''}">${m}x</span>`).join('')}</div><div class="row"><button class="p" onclick="play()">${g.bin?'Drop ball':'Spin'}</button></div>`;
+ if(g.k==='slots')h+=`<div class="row">${reels.map((r,i)=>`<span class="reel" id="r${i}">${SY[r]}</span>`).join('')}</div><p class="mu">Three match pays 10x. Two match returns your bet.</p><button class="p" onclick="play()">Spin reels</button>`;
+ if(g.k==='crash')h+=`<div class="big" id="cx">${cxv}</div><div class="row">${g.o.map((o,i)=>`<button class="${pk===i?'on':''}" onclick="pk=${i};render()">Cash out ${o}x</button>`).join('')}</div><button class="p" onclick="play()">Launch</button>`;
+ return h+`<div class="res ${res&&res.ok?'ok':'no'}">${res?E(res.t):''}</div></div>`}
+function userH(){const u=U();if(!u){ses=null;return authH()}
+ let h=`<div class="top"><div class="logo">PlayZone</div><div class="row" style="margin:0"><span class="pill">🪙 ${R(u.bal).toLocaleString()}</span><span class="mu">${E(u.name)}</span><button onclick="logout()">Log out</button></div></div><div class="hero">${E(DB.cfg.notice)}${u.ban?' · Your account is suspended.':''}</div>${tb([['games','Games'],['wallet','Wallet'],['hist','History']],ut,'setUt')}`;
+ if(ut==='games')h+=gid?panel():`<div class="grid">${G.map(g=>`<button class="gc" style="--h:${g.h}" onclick="openGame('${g.id}')"><i>${g.ic}</i><b>${g.n}</b><small>${DB.cfg.games[g.id].on?'Play now':'Off'}</small></button>`).join('')}</div>`;
+ if(ut==='wallet'){const can=Date.now()-u.last>=864e5;h+=`<div class="card"><h2>Daily bonus</h2><button class="p" onclick="daily()">${can?'Claim '+DB.cfg.daily+' coins':'Come back tomorrow'}</button></div><div class="card"><h2>Recharge coins</h2><p class="mu">Demo recharge: choose a pack and an admin approves it. No real payment.</p><div class="row">${PACKS.map(c=>`<button onclick="recharge(${c})">${c.toLocaleString()} coins</button>`).join('')}</div>${tbl(['Coins','Status','Time'],DB.reqs.filter(r=>r.uid===u.id).map(r=>[r.c.toLocaleString(),r.s,new Date(r.t).toLocaleString()]))}</div>`}
+ if(ut==='hist')h+=`<div class="card"><h2>History</h2>${tbl(['Type','Coins','Note','Time'],DB.tx.filter(t=>t.uid===u.id).slice(0,40).map(t=>[t.type,(t.amt>0?'+':'')+R(t.amt),E(t.note),new Date(t.t).toLocaleString()]))}</div>`;return h}
+function adminH(){const pend=DB.reqs.filter(r=>r.s==='pending').length;
+ let h=`<div class="top"><div class="logo">PlayZone admin</div><button onclick="logout()">Log out</button></div>${tb([['ov','Overview'],['us','Users'],['rq','Recharges ('+pend+')'],['gm','Games'],['se','Settings']],at,'setAt')}`;
+ if(at==='ov')h+=`<div class="grid">${[['Players',DB.users.length],['Coins held',R(DB.users.reduce((a,u)=>a+u.bal,0)).toLocaleString()],['Wagered',R(DB.st.w).toLocaleString()],['Paid out',R(DB.st.p).toLocaleString()],['House result',R(DB.st.w-DB.st.p).toLocaleString()],['Pending recharges',pend]].map(([a,b])=>`<div class="card" style="margin:0"><div class="mu">${a}</div><div class="logo">${b}</div></div>`).join('')}</div>`;
+ if(at==='us')h+=`<div class="card"><h2>Players</h2>${tbl(['Name','Contact','Via','Coins','Actions'],DB.users.map(u=>[E(u.name)+(u.ban?' <span class="no">banned</span>':''),E(u.email||u.phone||''),u.prov,R(u.bal).toLocaleString(),`<button onclick="adj('${u.id}',100)">+100</button> <button onclick="adj('${u.id}',-100)">-100</button> <button onclick="ban('${u.id}')">${u.ban?'Unban':'Ban'}</button> <button class="d" onclick="del('${u.id}')">Delete</button>`]))}</div>`;
+ if(at==='rq')h+=`<div class="card"><h2>Recharge requests</h2>${tbl(['Player','Coins','Status','Action'],DB.reqs.map(r=>{const u=DB.users.find(x=>x.id===r.uid);return[E(u?u.name:'?'),r.c.toLocaleString(),r.s,r.s==='pending'?`<button class="p" onclick="dec('${r.id}',1)">Approve</button> <button class="d" onclick="dec('${r.id}',0)">Reject</button>`:'']}))}</div>`;
+ if(at==='gm')h+=`<div class="card"><h2>Games</h2><p class="mu">Win chance = how often a player wins a round (1 to 100%). Move the slider to set it. Press Natural to go back to normal odds.</p><div class="row" style="align-items:center"><b>All games</b><input type="range" id="wa" min="1" max="100" value="50" style="max-width:220px" oninput="document.getElementById('wal').textContent=this.value+'%'"><span id="wal" class="pill">50%</span><button class="p" onclick="wpAll($('#wa').value)">Apply to all</button><button onclick="wpAll(null)">All natural</button></div>${tbl(['Game','Max bet','Win chance','Status'],G.map(g=>{const w=DB.cfg.games[g.id].wp;return[g.ic+' '+g.n,`<input type="number" style="width:100px" value="${DB.cfg.games[g.id].max}" onchange="mx('${g.id}',this.value)" aria-label="Max bet">`,`<div class="row" style="margin:0;flex-wrap:nowrap;align-items:center"><input type="range" min="1" max="100" value="${w==null?50:w}" style="width:150px" aria-label="Win chance" oninput="wpLbl('${g.id}',this.value)" onchange="wpSet('${g.id}',this.value)"><span id="wl-${g.id}" class="pill" style="min-width:62px;text-align:center">${w==null?'Natural':w+'%'}</span><button onclick="wpSet('${g.id}',null)">Natural</button></div>`,`<button class="${DB.cfg.games[g.id].on?'on':''}" onclick="tg('${g.id}')">${DB.cfg.games[g.id].on?'On':'Off'}</button>`]}))}</div>`;
+ if(at==='se')h+=`<div class="card"><h2>Settings</h2>${[['notice','Announcement',DB.cfg.notice],['edge','House edge %',DB.cfg.edge],['signup','Signup coins',DB.cfg.signup],['daily','Daily bonus coins',DB.cfg.daily]].map(([k,l,v])=>`<div class="row"><label class="mu" style="width:140px">${l}</label><input style="max-width:340px" value="${E(v)}" onchange="cf('${k}',this.value)"></div>`).join('')}<div class="row"><button class="d" onclick="wipe()">Reset all data</button></div><p class="mu">Admin email and password are set in the server .env file. All data is stored on the server.</p></div>`;return h}
+function render(){$('#app').innerHTML=!ready?'<p class="mu">Loading...</p>':!ses?authH():ses.role==='admin'?adminH():userH();
+ if(ready&&!ses&&GCID&&auth.tab==='google'&&window.google&&$('#gbtn')){google.accounts.id.initialize({client_id:GCID,callback:async r=>{const d=await api('/google',{credential:r.credential});if(d.ok){setTok(d.token);sync()}else{auth.err=d.err||'Google sign-in failed.';render()}}});google.accounts.id.renderButton($('#gbtn'),{theme:'outline',size:'large'})}}
+api('/config').then(c=>{GCID=c.googleClientId||'';if(GCID){const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.onload=render;document.head.appendChild(s)}}).finally(sync);
+</script></body></html>
