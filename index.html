@@ -206,7 +206,7 @@ const tb=(l,cur,fn,cls)=>`<div class="tabs ${cls||''}">${l.map(([k,t])=>`<button
 const tbl=(h,r)=>r.length?`<div class="wrap"><table><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr>${r.map(x=>`<tr>${x.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</table></div>`:'<p class="mu">Nothing here yet.</p>';
 /* ---------- login / signup ---------- */
 function authH(){const su=auth.mode==='signup';
- return`<div class="auth card"><div class="emo">🪙🎲🎰🚀</div><div class="logo">PlayZone</div><p class="mu">14 games. Virtual coins only.</p>${tb([['login','Login'],['signup','Sign up']].map(([k,t])=>[k,t]),auth.mode,'setMode')}
+ return`<div class="auth card"><div class="logo">PlayZone</div><p class="mu">14 games. Virtual coins only.</p>${tb([['login','Login'],['signup','Sign up']].map(([k,t])=>[k,t]),auth.mode,'setMode')}
  <div class="fld"><label for="un">Username</label><input id="un" value="${E(auth.u)}" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="your username" onkeydown="if(event.key==='Enter')doAuth()"></div>
  <div class="fld"><label for="pw">Password</label><input class="pwf" id="pw" type="password" autocomplete="${su?'new-password':'current-password'}" placeholder="${su?'at least 6 characters':'your password'}" onkeydown="if(event.key==='Enter')doAuth()"></div>
  ${su?`<div class="fld"><label for="pw2">Confirm password</label><input class="pwf" id="pw2" type="password" autocomplete="new-password" placeholder="type it again" onkeydown="if(event.key==='Enter')doAuth()"></div>`:''}
