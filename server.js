@@ -15,38 +15,41 @@ const G = {
 const seed = () => { const g = {}; for (const k in G) g[k] = { on: true, max: 1000 }; return { users: [], tx: [], reqs: [], st: { w: 0, p: 0 }, cfg: { notice: 'Virtual coins only. Coins have no cash value.', edge: 3, signup: 1000, daily: 100, games: g } }; };
 let DB; try { DB = JSON.parse(fs.readFileSync(FILE, 'utf8')); } catch { DB = seed(); }
 (function fix() { const s0 = seed(); for (const k in s0) if (!(k in DB)) DB[k] = s0[k]; for (const k in s0.cfg) if (!(k in DB.cfg)) DB.cfg[k] = s0.cfg[k]; for (const k in G) if (!DB.cfg.games[k]) DB.cfg.games[k] = s0.cfg.games[k]; })();
-function save() { fs.mkdirSync(DIR, { recursive: true }); const t = FILE + '.tmp'; fs.writeFileSync(t, JSON.stringify(DB)); fs.renameSync(t, FILE); }
+let saveErr = '';
+function save() {
+  try { fs.mkdirSync(DIR, { recursive: true }); const t = FILE + '.tmp'; fs.writeFileSync(t, JSON.stringify(DB)); fs.renameSync(t, FILE); saveErr = ''; }
+  catch (err) { saveErr = 'Cannot write ' + FILE + ' (' + (err.code || err.message) + '). Data is kept in memory only and will be lost on restart.'; console.error(saveErr); }
+}
 const same = (a, b) => { a = Buffer.from(String(a)); b = Buffer.from(String(b)); return a.length === b.length && crypto.timingSafeEqual(a, b); };
 const mac = b => crypto.createHmac('sha256', SECRET).update(b).digest('base64url');
 const sign = p => { const b = Buffer.from(JSON.stringify(p)).toString('base64url'); return b + '.' + mac(b); };
 const unsign = t => { try { const [b, s] = String(t).split('.'); if (!same(s, mac(b))) return null; const p = JSON.parse(Buffer.from(b, 'base64url')); return p.exp > Date.now() ? p : null; } catch { return null; } };
 const tx = (uid, type, amt, note) => { DB.tx.unshift({ uid, type, amt, note, t: Date.now() }); if (DB.tx.length > 2000) DB.tx.length = 2000; };
-const otps = new Map(), hits = new Map();
-const limited = (ip, max) => { const n = (hits.get(ip) || []).filter(t => Date.now() - t < 6e4); n.push(Date.now()); hits.set(ip, n); return n.length > max; };
-setInterval(() => { const now = Date.now(); for (const [k, v] of hits) if (!v.some(t => now - t < 6e4)) hits.delete(k); for (const [k, v] of otps) if (now > v.exp) otps.delete(k); }, 6e4).unref();
-
-async function deliver(ch, to, code) {
-  if (ch === 'email' && e.RESEND_API_KEY) {
-    const r = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: 'Bearer ' + e.RESEND_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: e.MAIL_FROM, to: [to], subject: 'Your PlayZone OTP', text: `Your OTP is ${code}. It expires in 5 minutes.` }) });
-    return r.ok;
-  }
-  if (ch === 'phone' && e.TWILIO_ACCOUNT_SID) {
-    const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${e.TWILIO_ACCOUNT_SID}/Messages.json`, { method: 'POST', headers: { Authorization: 'Basic ' + Buffer.from(e.TWILIO_ACCOUNT_SID + ':' + e.TWILIO_AUTH_TOKEN).toString('base64'), 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ To: to, From: e.TWILIO_FROM, Body: `Your PlayZone OTP is ${code}` }) });
-    return r.ok;
-  }
-  if (e.OTP_DEV === 'true') { console.log(`[DEV] OTP for ${to}: ${code}`); return true; }
-  return false;
-}
-function userFor(key, name, prov, x) {
-  let u = DB.users.find(u => u.key === key);
-  if (!u) { u = { id: crypto.randomUUID(), key, name, prov, ...x, bal: DB.cfg.signup, ban: false, joined: Date.now(), last: 0 }; DB.users.push(u); tx(u.id, 'bonus', u.bal, 'Signup bonus'); save(); }
-  return u;
+const hits = new Map();
+const limited = (k, max) => { const n = (hits.get(k) || []).filter(t => Date.now() - t < 6e4); n.push(Date.now()); hits.set(k, n); return n.length > max; };
+setInterval(() => { const now = Date.now(); for (const [k, v] of hits) if (!v.some(t => now - t < 6e4)) hits.delete(k); }, 6e4).unref();
+const ADMIN_USER = String(e.ADMIN_USER || e.ADMIN_EMAIL || 'admin').trim().toLowerCase();
+// Passwords: scrypt hash is used to log in. An AES-GCM encrypted copy (key from SESSION_SECRET) lets the admin view a password.
+const hashPw = pw => { const s = crypto.randomBytes(16).toString('hex'); return s + ':' + crypto.scryptSync(pw, s, 32).toString('hex'); };
+const checkPw = (u, pw) => { if (!u.ph) return false; const [s, h] = u.ph.split(':'); return same(h, crypto.scryptSync(String(pw), s, 32).toString('hex')); };
+const PWKEY = crypto.createHash('sha256').update('pwview:' + SECRET).digest();
+const encPw = pw => { const iv = crypto.randomBytes(12), c = crypto.createCipheriv('aes-256-gcm', PWKEY, iv), d = Buffer.concat([c.update(pw, 'utf8'), c.final()]); return [iv, c.getAuthTag(), d].map(x => x.toString('base64')).join('.'); };
+const decPw = t => { try { const [iv, tag, d] = t.split('.').map(x => Buffer.from(x, 'base64')), c = crypto.createDecipheriv('aes-256-gcm', PWKEY, iv); c.setAuthTag(tag); return Buffer.concat([c.update(d), c.final()]).toString('utf8'); } catch { return null; } };
+const setPw = (u, pw) => { u.ph = hashPw(pw); u.pe = encPw(pw); };
+const uname = x => String(x || '').trim().toLowerCase(), okUser = x => /^[a-z0-9_.]{3,20}$/.test(x), okPw = x => typeof x === 'string' && x.length >= 6 && x.length <= 64;
+const real = () => DB.users.filter(u => !u.isAdmin);
+const pub = u => ({ id: u.id, username: u.username || '', phone: u.phone || '', email: u.email || '', bal: u.bal, ban: !!u.ban, joined: u.joined, last: u.last, nopw: !u.ph });
+function adminUser(login) {
+  let u = DB.users.find(x => x.isAdmin);
+  if (!u) { u = { id: 'admin', isAdmin: true, bal: 100000, ban: false, joined: Date.now(), last: 0 }; DB.users.push(u); }
+  u.username = ADMIN_USER; if (login && u.bal < 1000) u.bal = 100000; return u;
 }
 const tokFor = u => sign({ r: 'u', id: u.id, exp: Date.now() + 30 * 864e5 });
 function stateFor(a) {
-  if (a.r === 'a') return { ok: true, role: 'admin', uid: 'admin', db: { ...DB, tx: DB.tx.slice(0, 200) } };
-  const u = DB.users.find(x => x.id === a.id); if (!u) return { ok: false };
-  return { ok: true, role: 'user', uid: u.id, db: { users: [u], reqs: DB.reqs.filter(r => r.uid === u.id), tx: DB.tx.filter(t => t.uid === u.id).slice(0, 50), st: { w: 0, p: 0 }, cfg: { ...DB.cfg, games: Object.fromEntries(Object.entries(DB.cfg.games).map(([k, v]) => [k, { on: v.on, max: v.max }])) } } };
+  if (a.r === 'a') return { ok: true, role: 'admin', warn: saveErr, me: pub(adminUser()), db: { users: real().map(pub), reqs: DB.reqs, tx: DB.tx.slice(0, 300), st: DB.st, cfg: DB.cfg } };
+  const u = real().find(x => x.id === a.id); if (!u) return { ok: false };
+  const games = Object.fromEntries(Object.entries(DB.cfg.games).map(([k, v]) => [k, { on: v.on, max: v.max }]));
+  return { ok: true, role: 'user', me: pub(u), db: { users: [], reqs: DB.reqs.filter(r => r.uid === u.id), tx: DB.tx.filter(t => t.uid === u.id).slice(0, 50), st: { w: 0, p: 0 }, cfg: { ...DB.cfg, games } } };
 }
 function play(u, { game, bet, pick, tile }) {
   const g = G[game], c = DB.cfg.games[game], b = Math.floor(+bet);
@@ -67,14 +70,23 @@ function play(u, { game, bet, pick, tile }) {
   else if (g.k === 'crash') { const t = g.o[Math.floor(+pick)]; if (!t) return { err: 'Pick a target.' }; let cp;
     if (wp === null) cp = Math.min(100, (1 - ed) / (1 - rnd(1e9) / 1e9)); else if (win()) cp = t * (1 + 2 * rnd(1e6) / 1e6); else cp = 1 + (t - 1) * (rnd(1e6) / 1e6);
     m = cp >= t ? t : 0; o = { cp }; }
-  const w = Math.floor(b * m); u.bal += w - b; DB.st.w += b; DB.st.p += w; tx(u.id, w > b ? 'win' : w === b ? 'push' : 'loss', w - b, `${g.n} ${m.toFixed(2)}x`); save();
+  const w = Math.floor(b * m); u.bal += w - b; if (!u.isAdmin) { DB.st.w += b; DB.st.p += w; } tx(u.id, w > b ? 'win' : w === b ? 'push' : 'loss', w - b, `${g.n} ${m.toFixed(2)}x`); save();
   return { ok: true, w, o, bal: u.bal };
 }
 const A = {
-  '/admin/adjust': b => { const u = DB.users.find(x => x.id === b.id); if (u) { const d = Math.max(-1e6, Math.min(1e6, Math.floor(+b.d) || 0)); u.bal = Math.max(0, u.bal + d); tx(u.id, 'admin', d, 'Admin adjustment'); } },
-  '/admin/ban': b => { const u = DB.users.find(x => x.id === b.id); if (u) u.ban = !u.ban; },
-  '/admin/delete': b => { DB.users = DB.users.filter(x => x.id !== b.id); DB.reqs = DB.reqs.filter(r => r.uid !== b.id); },
-  '/admin/resolve': b => { const r = DB.reqs.find(x => x.id === b.id); if (r && r.s === 'pending') { r.s = b.ok ? 'approved' : 'rejected'; const u = DB.users.find(x => x.id === r.uid); if (b.ok && u) { u.bal += r.c; tx(u.id, 'recharge', r.c, 'Recharge approved'); } } },
+  '/admin/adjust': b => { const u = real().find(x => x.id === b.id); if (u) { const d = Math.max(-1e6, Math.min(1e6, Math.floor(+b.d) || 0)); u.bal = Math.max(0, u.bal + d); tx(u.id, 'admin', d, 'Admin adjustment'); } },
+  '/admin/ban': b => { const u = real().find(x => x.id === b.id); if (u) u.ban = !u.ban; },
+  '/admin/delete': b => { DB.users = DB.users.filter(x => x.isAdmin || x.id !== b.id); DB.reqs = DB.reqs.filter(r => r.uid !== b.id); },
+  '/admin/edit': b => {
+    const u = real().find(x => x.id === b.id); if (!u) return { err: 'Player not found.' };
+    if ('username' in b) { const n = uname(b.username); if (!okUser(n)) return { err: 'Username: 3 to 20 letters, numbers, _ or .' }; if (n === ADMIN_USER || real().some(x => x.id !== u.id && x.username === n)) return { err: 'That username is already taken.' }; u.username = n; }
+    if ('phone' in b) u.phone = String(b.phone).trim().slice(0, 20);
+    if ('email' in b) u.email = String(b.email).trim().slice(0, 80);
+    if ('coins' in b) { const c = Math.max(0, Math.min(1e9, Math.floor(+b.coins) || 0)); if (c !== u.bal) { tx(u.id, 'admin', c - u.bal, 'Admin set balance'); u.bal = c; } }
+  },
+  '/admin/setpw': b => { const u = real().find(x => x.id === b.id); if (!u) return { err: 'Player not found.' }; if (!okPw(b.pw)) return { err: 'Password must be 6 to 64 characters.' }; setPw(u, b.pw); },
+  '/admin/viewpw': b => { const u = real().find(x => x.id === b.id); if (!u) return { err: 'Player not found.' }; if (!u.pe) return { err: 'No password saved for this player. Set a new one.' }; const pw = decPw(u.pe); return pw === null ? { err: 'Cannot read it (server secret changed). Set a new password.' } : { pw }; },
+  '/admin/resolve': b => { const r = DB.reqs.find(x => x.id === b.id); if (r && r.s === 'pending') { r.s = b.ok ? 'approved' : 'rejected'; const u = real().find(x => x.id === r.uid); if (b.ok && u) { u.bal += r.c; tx(u.id, 'recharge', r.c, 'Recharge approved'); } } },
   '/admin/game': b => { const c = DB.cfg.games[b.id]; if (c) { if ('on' in b) c.on = !!b.on; if ('max' in b) c.max = Math.max(10, Math.floor(+b.max) || 10); if ('wp' in b) c.wp = b.wp === null ? null : Math.max(1, Math.min(100, Math.floor(+b.wp) || 1)); } },
   '/admin/gameall': b => { const v = b.wp === null ? null : Math.max(1, Math.min(100, Math.floor(+b.wp) || 1)); for (const k in DB.cfg.games) DB.cfg.games[k].wp = v; },
   '/admin/cfg': b => { if (b.k === 'notice') DB.cfg.notice = String(b.v).slice(0, 120); else if (['edge', 'signup', 'daily'].includes(b.k)) DB.cfg[b.k] = Math.max(0, Math.min(b.k === 'edge' ? 50 : 1e6, +b.v || 0)); },
@@ -83,51 +95,44 @@ const A = {
 const server = http.createServer((req, res) => {
   const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress, url = req.url.split('?')[0];
   res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('X-Frame-Options', 'DENY'); res.setHeader('Referrer-Policy', 'same-origin');
-  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src https://fonts.gstatic.com; frame-src https://accounts.google.com; connect-src 'self' https://accounts.google.com; img-src 'self' data: https:");
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self'; img-src 'self' data:");
   const J = (c, o) => { res.writeHead(c, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(o)); };
   if (req.method === 'GET' && url === '/') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); return fs.createReadStream(path.join(__dirname, 'index.html')).pipe(res); }
-  if (url === '/health') return J(200, { ok: true });
+  if (url === '/health') return J(200, { ok: true, saved: !saveErr });
   if (!url.startsWith('/api/')) return J(404, { ok: false });
   let raw = ''; req.on('data', d => { raw += d; if (raw.length > 1e4) req.destroy(); });
   req.on('end', async () => {
     try {
       const b = raw ? JSON.parse(raw) : {}, a = unsign((req.headers.authorization || '').slice(7)), p = url.slice(4);
-      if (p === '/config') return J(200, { googleClientId: e.GOOGLE_CLIENT_ID || '' });
-      if (p === '/otp/send') {
-        const ch = b.channel, to = String(b.to || '').trim().toLowerCase();
-        if (!['email', 'phone'].includes(ch) || (ch === 'email' ? !/^\S+@\S+\.\S+$/.test(to) : !/^\+?\d{8,15}$/.test(to))) return J(400, { ok: false, err: 'Invalid email or phone.' });
-        if (limited(ip, 6)) return J(429, { ok: false, err: 'Too many requests. Wait a minute.' });
-        const prev = otps.get(ch + ':' + to); if (prev && Date.now() - (prev.sent || 0) < 3e4) return J(429, { ok: false, err: 'OTP already sent. Wait 30 seconds.' });
-        const code = String(100000 + rnd(900000)); otps.set(ch + ':' + to, { code, exp: Date.now() + 3e5, tries: 0, sent: Date.now() });
-        if (!(await deliver(ch, to, code))) { otps.delete(ch + ':' + to); return J(500, { ok: false, err: 'Could not send OTP. Check the mail or SMS settings.' }); }
-        return J(200, { ok: true, dev: e.OTP_DEV === 'true' ? code : undefined });
-      }
-      if (p === '/otp/verify') {
-        const ch = b.channel, to = String(b.to || '').trim().toLowerCase(), k = ch + ':' + to, o = otps.get(k);
-        if (!o || Date.now() > o.exp || ++o.tries > 5 || !same(o.code, b.code)) return J(200, { ok: false, err: 'Wrong or expired OTP.' });
-        otps.delete(k); const u = ch === 'email' ? userFor('e:' + to, to.split('@')[0], 'email', { email: to }) : userFor('p:' + to, 'Player ' + to.slice(-4), 'phone', { phone: to });
+      if (p === '/auth/signup') {
+        const n = uname(b.username);
+        if (limited('s:' + ip, 8)) return J(429, { ok: false, err: 'Too many attempts. Wait a minute.' });
+        if (!okUser(n)) return J(200, { ok: false, err: 'Username: 3 to 20 letters, numbers, _ or .' });
+        if (!okPw(b.password)) return J(200, { ok: false, err: 'Password must be 6 to 64 characters.' });
+        if (n === ADMIN_USER || real().some(x => x.username === n)) return J(200, { ok: false, err: 'That username is already taken.' });
+        const u = { id: crypto.randomUUID(), username: n, bal: DB.cfg.signup, ban: false, joined: Date.now(), last: 0 }; setPw(u, b.password); DB.users.push(u); tx(u.id, 'bonus', u.bal, 'Signup bonus'); save();
         return J(200, { ok: true, token: tokFor(u) });
       }
-      if (p === '/google') {
-        if (!e.GOOGLE_CLIENT_ID) return J(200, { ok: false, err: 'Google sign-in is not configured.' });
-        const r = await fetch('https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(b.credential || '')), t = await r.json();
-        if (!r.ok || t.aud !== e.GOOGLE_CLIENT_ID || t.email_verified !== 'true') return J(200, { ok: false, err: 'Google sign-in failed.' });
-        return J(200, { ok: true, token: tokFor(userFor('g:' + t.email.toLowerCase(), t.name || t.email.split('@')[0], 'google', { email: t.email })) });
-      }
-      if (p === '/admin/login') {
-        if (limited(ip, 8) || limited('admin-global', 30)) return J(429, { ok: false, err: 'Too many attempts. Wait a minute.' });
-        if (e.ADMIN_EMAIL && e.ADMIN_PASSWORD && same(String(b.email || '').trim().toLowerCase(), e.ADMIN_EMAIL.toLowerCase()) && same(b.password || '', e.ADMIN_PASSWORD)) return J(200, { ok: true, token: sign({ r: 'a', exp: Date.now() + 12 * 36e5 }) });
-        return J(200, { ok: false, err: 'Wrong admin email or password.' });
+      if (p === '/auth/login') {
+        const n = uname(b.username), pw = String(b.password || '');
+        if (limited('l:' + ip, 20) || limited('u:' + n, 10) || limited('login-global', 120)) return J(429, { ok: false, err: 'Too many attempts. Wait a minute.' });
+        if (n === ADMIN_USER && e.ADMIN_PASSWORD) {
+          if (!same(pw, e.ADMIN_PASSWORD)) return J(200, { ok: false, err: 'Wrong username or password.' });
+          adminUser(true); save(); return J(200, { ok: true, token: sign({ r: 'a', exp: Date.now() + 12 * 36e5 }) });
+        }
+        const u = real().find(x => x.username === n);
+        if (!u || !checkPw(u, pw)) return J(200, { ok: false, err: 'Wrong username or password.' });
+        return J(200, { ok: true, token: tokFor(u) });
       }
       if (!a) return J(401, { ok: false, err: 'Please log in again.' });
       if (p === '/state') { const s = stateFor(a); return J(s.ok ? 200 : 401, s); }
-      if (a.r === 'a' && A[p]) { A[p](b); save(); return J(200, { ok: true }); }
-      const u = a.r === 'u' && DB.users.find(x => x.id === a.id); if (!u) return J(401, { ok: false, err: 'Please log in again.' });
+      if (a.r === 'a' && A[p]) { const r = A[p](b) || {}; if (r.err) return J(200, { ok: false, err: r.err }); save(); return J(200, { ok: true, ...r }); }
+      const u = a.r === 'a' ? adminUser() : real().find(x => x.id === a.id); if (!u) return J(401, { ok: false, err: 'Please log in again.' });
       if (p === '/play') { const r = play(u, b); return J(200, r.err ? { ok: false, err: r.err } : r); }
       if (p === '/daily') { if (Date.now() - u.last < 864e5 || u.ban) return J(200, { ok: false, err: 'Come back tomorrow.' }); u.last = Date.now(); u.bal += DB.cfg.daily; tx(u.id, 'bonus', DB.cfg.daily, 'Daily bonus'); save(); return J(200, { ok: true }); }
       if (p === '/recharge') { if (!PACKS.includes(+b.coins) || DB.reqs.filter(r => r.uid === u.id && r.s === 'pending').length >= 5) return J(200, { ok: false, err: 'Request not allowed.' }); DB.reqs.unshift({ id: crypto.randomUUID(), uid: u.id, c: +b.coins, s: 'pending', t: Date.now() }); save(); return J(200, { ok: true }); }
       return J(404, { ok: false });
-    } catch (err) { console.error(err); J(400, { ok: false, err: 'Bad request.' }); }
+    } catch (err) { console.error(err); if (!res.headersSent) J(err instanceof SyntaxError ? 400 : 500, { ok: false, err: err instanceof SyntaxError ? 'Bad request.' : 'Server error. Please try again.' }); }
   });
 });
 server.listen(PORT, () => console.log('PlayZone running on port ' + PORT));

@@ -7,33 +7,85 @@
 :root{--bg:#f3f0ff;--card:#fff;--tx:#1a1533;--mu:#6c6592;--bd:#ddd6f7;--ac:#7c3aed;--go:#f5a300;--pk:#e11d74;--ok:#0e9f6e;--no:#dc2626;--l:93%;--sl:75%;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c0a1d;--card:#171330;--tx:#f1ecff;--mu:#9d95c7;--bd:#2c2552;--ac:#a78bfa;--go:#ffc83d;--pk:#ff5c9d;--l:17%;--sl:55%}}
 :root[data-theme="dark"]{--bg:#0c0a1d;--card:#171330;--tx:#f1ecff;--mu:#9d95c7;--bd:#2c2552;--ac:#a78bfa;--go:#ffc83d;--pk:#ff5c9d;--l:17%;--sl:55%}
-*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 Sora,system-ui,sans-serif}
-main{max-width:960px;margin:0 auto;padding:14px}h2{margin:0 0 6px;font-size:20px}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 Sora,system-ui,sans-serif;-webkit-text-size-adjust:100%}
+main{max-width:980px;margin:0 auto;padding:14px}h2{margin:0 0 6px;font-size:20px}h3{margin:0 0 8px;font-size:16px}
 button{font:inherit;cursor:pointer;border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:8px 14px;border-radius:10px;transition:transform .1s}
 button:active{transform:scale(.97)}button:focus-visible,input:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
 button.p{background:linear-gradient(90deg,var(--go),var(--pk));border:0;color:#1a0b1f;font-weight:800}
-button.on{background:var(--ac);border-color:var(--ac);color:#fff}button.d{color:var(--no)}
-input{font:inherit;padding:9px 11px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);width:100%}
+button.on{background:var(--ac);border-color:var(--ac);color:#fff}button.d{color:var(--no)}button.sm{padding:6px 10px;font-size:13px}
+input{font:inherit;padding:9px 11px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);width:100%;min-width:0}
+input[type=range]{padding:0;accent-color:var(--ac);height:28px}input[type=checkbox]{width:auto}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px;margin-bottom:14px}
 .top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .logo{font-weight:800;font-size:24px;background:linear-gradient(90deg,var(--go),var(--pk));-webkit-background-clip:text;background-clip:text;color:transparent}
-.pill{background:var(--card);border:1px solid var(--bd);border-radius:99px;padding:6px 14px;font-weight:800;color:var(--go)}
+.pill{display:inline-block;background:var(--card);border:1px solid var(--bd);border-radius:99px;padding:5px 13px;font-weight:800;color:var(--go);white-space:nowrap}
 .hero{background:linear-gradient(120deg,var(--ac),var(--pk));color:#fff;border-radius:16px;padding:16px;margin-bottom:14px;font-weight:600}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
 .gc{background:hsl(var(--h) var(--sl) var(--l));border:1px solid hsl(var(--h) 60% 55%/.4);text-align:left;padding:14px;border-radius:16px;min-height:104px}
 .gc i{font-style:normal;font-size:34px;display:block}.gc b{display:block;margin-top:4px}.gc small{color:var(--mu)}
-.tabs,.row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.tabs button{flex:1}
+.tabs,.row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;align-items:center}.tabs button{flex:1}
+.tabs.sc{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}.tabs.sc button{flex:0 0 auto}
 .mu{color:var(--mu);font-size:13px}.ok{color:var(--ok)}.no{color:var(--no)}
 .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:330px}.tile{height:70px;font-size:20px;font-weight:800}.tile.hit{background:var(--go);color:#1a0b1f}
 .strip{display:flex;flex-wrap:wrap;gap:6px}.sg{padding:10px 12px;border-radius:10px;border:1px solid var(--bd);min-width:56px;text-align:center}.sg.hit{background:var(--go);color:#1a0b1f;font-weight:800}
 .reel{font-size:44px;background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:6px 14px}.big{font-size:42px;font-weight:800;color:var(--go)}
 .res{font-size:18px;font-weight:800;margin-top:10px;min-height:26px}
 .wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px}td,th{padding:8px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
-.auth{max-width:420px;margin:6vh auto 0}.info{background:var(--bg);border:1px dashed var(--ac);border-radius:10px;padding:8px 10px;margin:8px 0;font-size:13px}
-a{color:var(--ac);cursor:pointer}
-</style></head><body><main id="app"></main>
+.auth{max-width:420px;margin:6vh auto 0}
+.list{display:grid;gap:10px}.item{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px;border:1px solid var(--bd);border-radius:14px;background:var(--bg)}
+.item .grow{flex:1;min-width:150px;overflow-wrap:anywhere}.item .acts{display:flex;gap:6px;flex-wrap:wrap}
+.av{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--pk));color:#fff;display:grid;place-items:center;font-weight:800;flex:none}
+.badge{font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;border:1px solid currentColor;margin-left:6px;vertical-align:middle}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:14px}.stats .card{margin:0}
+.fld{display:grid;gap:4px;margin-bottom:10px}.fld label{font-size:13px;color:var(--mu)}
+.ov{position:fixed;inset:0;background:rgba(10,8,25,.65);display:flex;justify-content:center;align-items:flex-start;padding:14px;overflow:auto;z-index:50}
+.md{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:18px;width:100%;max-width:540px;margin:auto}
+.pwbox{background:var(--bg);border:1px dashed var(--ac);border-radius:10px;padding:8px 10px;font-family:ui-monospace,monospace;word-break:break-all;min-height:38px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:12px;z-index:60;max-width:90vw}
+.sec{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+
+.stage{min-height:200px;display:grid;place-items:center;margin:10px 0;border-radius:16px;background:radial-gradient(circle at 50% 25%,rgba(124,58,237,.18),transparent 70%),var(--bg);border:1px solid var(--bd);padding:14px;overflow:hidden;position:relative}
+.stage.shake{animation:shake .45s}.stage.glow{animation:glow 1.1s}
+@keyframes shake{20%{transform:translateX(-9px)}40%{transform:translateX(9px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 transparent}40%{box-shadow:0 0 38px 8px var(--go)}}
+.busy button{pointer-events:none;opacity:.65}
+.flipw{perspective:700px;width:120px;height:120px}.flip3{width:100%;height:100%;position:relative;transform-style:preserve-3d}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:grid;place-items:center;border-radius:50%}.face.b{transform:rotateY(180deg)}
+.coinf{background:radial-gradient(circle at 35% 30%,#fff3b0,#f5a300 55%,#b8770a);border:4px solid #e0a100;font:800 48px Sora,sans-serif;color:#7a4b00;box-shadow:inset 0 0 0 4px #ffd24a,0 6px 16px rgba(0,0,0,.25)}
+.cardf{border-radius:12px;background:#fff;color:#111;border:2px solid var(--bd);font-size:68px;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.cardf.back{background:repeating-linear-gradient(45deg,#7c3aed,#7c3aed 8px,#e11d74 8px,#e11d74 16px)}
+.jump{animation:jump 1.6s ease-out}@keyframes jump{0%,100%{transform:translateY(0)}35%{transform:translateY(-74px)}}
+.ball{width:120px;height:120px;border-radius:50%;display:grid;place-items:center;font:800 50px Sora,sans-serif;color:#fff;background:radial-gradient(circle at 35% 30%,#666,#111 70%);border:4px solid #333;box-shadow:0 6px 16px rgba(0,0,0,.3)}
+.ball.die{border-radius:24px;background:linear-gradient(145deg,#fff,#d9d9e6);color:#111;border:3px solid #bbb}
+.rolling{animation:roll .4s linear infinite}@keyframes roll{50%{transform:rotate(180deg) scale(1.08)}to{transform:rotate(360deg)}}
+.hand{font-size:100px;line-height:1}.shaking{animation:hshake .26s ease-in-out infinite}@keyframes hshake{50%{transform:translateY(-24px) rotate(-14deg)}}
+.numr{font:800 90px Sora,sans-serif;color:var(--go);text-shadow:0 4px 18px rgba(245,163,0,.5)}
+.tiles{width:100%}.tl{perspective:600px}.tin{position:relative;height:72px;transform-style:preserve-3d;transition:transform .6s}.tin.flip{transform:rotateY(180deg)}
+.tf{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:grid;place-items:center;border-radius:12px;font:800 20px Sora,sans-serif;border:1px solid var(--bd)}
+.tf.fr{background:linear-gradient(145deg,var(--card),var(--bg));cursor:pointer}.tf.fr:hover{border-color:var(--ac)}.tf.bk{transform:rotateY(180deg);background:var(--card)}
+.tf.bk.w{background:linear-gradient(135deg,var(--go),var(--pk));color:#1a0b1f;border:0}.tf.bk.l{color:var(--mu)}.tin.pick .tf.bk{outline:3px solid var(--ac);outline-offset:2px}
+.whw{position:relative;width:min(100%,270px);aspect-ratio:1}.whw svg{width:100%;height:100%;display:block;filter:drop-shadow(0 6px 10px rgba(0,0,0,.25))}
+.ptr{position:absolute;left:50%;top:-8px;transform:translateX(-50%);font-size:30px;z-index:2;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4))}
+.plk{position:relative;width:min(100%,340px);height:260px}.peg{position:absolute;width:9px;height:9px;border-radius:50%;background:var(--mu);transform:translate(-50%,-50%)}
+.pball{position:absolute;width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,var(--pk));transform:translate(-50%,-50%);transition:left .28s cubic-bezier(.3,1.4,.5,1),top .28s cubic-bezier(.5,0,.8,.5);box-shadow:0 0 12px var(--pk);z-index:2}
+.bins{position:absolute;left:0;right:0;bottom:0;display:flex;gap:3px}.bins span{flex:1;text-align:center;padding:7px 0;border-radius:8px;font-size:12px;font-weight:800;background:var(--card);border:1px solid var(--bd);transition:transform .25s}.bins span.hit{background:var(--go);color:#1a0b1f!important;transform:scale(1.15)}
+.reels{display:flex;gap:10px}.reelw{width:86px;height:94px;overflow:hidden;border-radius:14px;background:var(--card);border:2px solid var(--bd);box-shadow:inset 0 12px 14px -12px rgba(0,0,0,.5),inset 0 -12px 14px -12px rgba(0,0,0,.5)}
+.rstrip{display:flex;flex-direction:column}.rstrip span{height:94px;display:grid;place-items:center;font-size:50px;flex:none}.reelw.win{border-color:var(--go);box-shadow:0 0 20px var(--go)}
+.cr{position:relative;width:100%;height:220px;background:linear-gradient(180deg,#0b0820,#241657);border-radius:14px;overflow:hidden}
+.crm{position:absolute;left:0;right:0;top:10px;text-align:center;font:800 40px Sora,sans-serif;color:#fff}
+.rk{position:absolute;font-size:40px;line-height:1;transform:translate(-50%,50%);left:8%;bottom:8%}.rk.boom{animation:boom .6s forwards}@keyframes boom{from{transform:translate(-50%,50%) scale(.3)}to{transform:translate(-50%,50%) scale(2.4)}}
+.dot{position:absolute;width:7px;height:7px;border-radius:50%;background:#ffa63d;transform:translate(-50%,50%);animation:fade .7s forwards}@keyframes fade{to{opacity:0;transform:translate(-50%,50%) scale(.2)}}
+.tgt{position:absolute;left:0;right:0;border-top:2px dashed var(--go);color:var(--go);font-size:12px;font-weight:800;text-align:right;padding-right:8px}
+.cash{position:absolute;left:0;right:0;bottom:8px;text-align:center;font-weight:800;color:#5dffb0;opacity:0;transition:opacity .3s}
+.cp{position:fixed;top:-18px;width:9px;height:14px;opacity:.95;z-index:70;pointer-events:none;animation:fall 2s ease-in forwards}
+@keyframes fall{to{transform:translate3d(var(--dx),110vh,0) rotate(var(--r))}}
+.fl{position:fixed;font-weight:800;font-size:22px;transform:translateX(-50%);animation:fup 1.2s ease-out forwards;z-index:70;pointer-events:none}@keyframes fup{from{opacity:1}to{opacity:0;transform:translate(-50%,-44px)}}
+.bump{animation:bump .5s}@keyframes bump{40%{transform:scale(1.25)}}
+@media (prefers-reduced-motion:reduce){.rolling,.shaking,.jump,.cp{animation-duration:.01s}}
+@media(max-width:520px){main{padding:10px}.logo{font-size:20px}.card{padding:13px}.item .acts button{flex:1}.tile{height:62px}.big{font-size:36px}}
+</style></head><body><main id="app"></main><div id="modal"></div><div id="toast"></div>
 <script>
-const $=s=>document.querySelector(s),R=Math.round,rnd=n=>Math.floor(Math.random()*n),E=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=s=>document.querySelector(s),R=Math.round,rnd=n=>Math.floor(Math.random()*n),E=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const G=[
 {id:'coin',n:'Coin Flip',ic:'🪙',h:42,k:'pick',o:['Heads','Tails']},{id:'oe',n:'Odd or Even',ic:'🎱',h:200,k:'pick',o:['Odd','Even']},
 {id:'rb',n:'Red or Black',ic:'♠️',h:350,k:'pick',o:['Red','Black']},{id:'dice',n:'Dice Roll',ic:'🎲',h:160,k:'pick',o:['Over 50','Under 50']},
@@ -43,66 +95,161 @@ const G=[
 {id:'whl',n:'Lucky Wheel',ic:'🎡',h:50,k:'wheel',t:[0,0,.5,1,1.5,2,0,2.5]},{id:'pli',n:'Plinko',ic:'🔴',h:0,k:'wheel',bin:1,t:[4,1.8,.7,.3,.7,1.8,4]},
 {id:'slt',n:'Slot Machine',ic:'🎰',h:300,k:'slots'},{id:'crs',n:'Crash Rocket',ic:'🚀',h:190,k:'crash',o:[1.5,2,3,5]}];
 const SY=['🍒','🍋','🔔','⭐','7️⃣'],PACKS=[500,2500,10000];
-let GCID='',TOKEN='',DB={users:[],reqs:[],tx:[],st:{w:0,p:0},cfg:{notice:'',edge:0,signup:0,daily:0,games:{}}},ses=null,ut='games',gid=null,auth={tab:'email',sent:0,to:'',err:'',info:''},at='ov',bet=50,pk=0,rev=null,tp=-1,hit=-1,reels=[0,1,2],cxv='1.00x',res=null,busy=false,ready=false;
+let TOKEN='',DB={users:[],reqs:[],tx:[],st:{w:0,p:0},cfg:{notice:'',edge:0,signup:0,daily:0,games:{}}},ME=null,ses=null,view='play',ut='games',gid=null,auth={mode:'login',err:'',u:''},at='ov',uq='',ed=null,bet=50,pk=0,rev=null,tp=-1,hit=-1,reels=[0,1,2],cxv='1.00x',res=null,busy=false,ready=false;
 try{TOKEN=localStorage.getItem('pzt')||''}catch(e){}
-const U=()=>ses&&DB.users.find(u=>u.id===ses.uid),GM=()=>G.find(g=>g.id===gid);
-async function api(p,b){try{const r=await fetch('/api'+p,{method:b?'POST':'GET',headers:{'Content-Type':'application/json',Authorization:'Bearer '+TOKEN},body:b?JSON.stringify(b):undefined});return await r.json()}catch(x){return{ok:false,err:'Network error. Check your connection.'}}}
+const GM=()=>G.find(g=>g.id===gid),fmt=n=>R(n).toLocaleString(),when=t=>t?new Date(t).toLocaleString():'-';
+async function api(p,b){try{const r=await fetch('/api'+p,{method:b?'POST':'GET',headers:{'Content-Type':'application/json',Authorization:'Bearer '+TOKEN},body:b?JSON.stringify(b):undefined});const j=await r.json();j._s=r.status;return j}catch(x){return{ok:false,err:'Network error. Check your connection.'}}}
 function setTok(t){TOKEN=t;try{t?localStorage.setItem('pzt',t):localStorage.removeItem('pzt')}catch(e){}}
-async function sync(){if(TOKEN){const d=await api('/state');if(d.ok){DB=d.db;ses={role:d.role,uid:d.uid}}else{setTok('');ses=null}}else ses=null;ready=true;render()}
-const setUt=k=>{ut=k;render()},setAt=k=>{at=k;render()},adm=(p,b)=>api(p,b).then(sync);
-function setT(t){auth={tab:t,sent:0,to:'',err:'',info:''};render()}
-async function sendOtp(){const to=$('#to').value.trim(),em=auth.tab==='email';
- if(em?!/^\S+@\S+\.\S+$/.test(to):!/^\+?\d{8,15}$/.test(to)){auth.err=em?'Enter a valid email address.':'Enter a phone number with country code.';return render()}
- const d=await api('/otp/send',{channel:auth.tab,to});
- if(!d.ok){auth.err=d.err||'Could not send OTP.';return render()}
- auth={tab:auth.tab,sent:1,to,err:'',info:'OTP sent to '+to+'.'+(d.dev?' Dev OTP: '+d.dev:'')};render()}
-async function verify(){const d=await api('/otp/verify',{channel:auth.tab,to:auth.to,code:$('#code').value.trim()});
- if(!d.ok){auth.err=d.err||'Wrong or expired OTP.';return render()}
- setTok(d.token);auth={tab:'email',sent:0,to:'',err:'',info:''};ut='games';gid=null;sync()}
-async function adminLogin(){const d=await api('/admin/login',{email:$('#ae').value.trim(),password:$('#ap').value});
- if(!d.ok){auth.err=d.err||'Wrong admin email or password.';return render()}setTok(d.token);at='ov';sync()}
-function logout(){setTok('');gid=null;sync()}
-function openGame(id){gid=id;pk=0;rev=null;tp=-1;hit=-1;res=null;render()}
-function anim(n,ms,f,done){let i=0;const t=setInterval(()=>{try{f(i++)}catch(e){}if(i>n){clearInterval(t);done()}},ms)}
-async function play(i){if(busy)return;const g=GM(),b=Math.floor(+$('#bet').value)||0;bet=b;busy=true;res=null;
+async function sync(){if(TOKEN){const d=await api('/state');if(d.ok){DB=d.db;ME=d.me;ses={role:d.role,warn:d.warn};lastC=sigC();lastD=sigD()}else if(d._s===401){setTok('');ses=null;ME=null}}else{ses=null;ME=null}ready=true;render()}
+function toast(t){const e=$('#toast');e.innerHTML='<div class="toast">'+E(t)+'</div>';clearTimeout(toast.t);toast.t=setTimeout(()=>e.innerHTML='',2600)}
+const setUt=k=>{ut=k;render();if(k!=='games')api('/state').then(d=>{if(d.ok&&ut===k&&!busy){DB=d.db;ME=d.me;render()}})},setAt=k=>{at=k;render()},adm=(p,b)=>api(p,b).then(d=>{if(!d.ok&&d.err)toast(d.err);return sync()});
+function setMode(m){auth={mode:m,err:'',u:auth.u};render()}
+async function doAuth(){const u=$('#un').value.trim(),p=$('#pw').value;auth.u=u;
+ if(!u||!p){auth.err='Enter username and password.';return render()}
+ if(auth.mode==='signup'&&p!==$('#pw2').value){auth.err='Passwords do not match.';return render()}
+ const d=await api(auth.mode==='signup'?'/auth/signup':'/auth/login',{username:u,password:p});
+ if(!d.ok){auth.err=d.err||'Something went wrong.';return render()}
+ setTok(d.token);auth={mode:'login',err:'',u:''};view='play';ut='games';gid=null;sync()}
+function logout(){setTok('');gid=null;view='play';ed=null;closeModal();sync()}
+/* ---------- game stage + animations ---------- */
+let gs={o:null,n:null,rot:0,fl:0,suit:'♥'},seq=0,lastC='',lastD='';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms)),raf=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+const segCol=m=>m===0?'#64748b':m<1?'#f97316':m<2?'#3b82f6':m<3?'#10b981':'#e11d74';
+function openGame(id){gid=id;pk=0;res=null;gs={o:null,n:null,rot:0,fl:0,suit:'♥'};render()}
+function wheelSVG(g){const n=g.t.length,seg=360/n,R=95,pt=(a,r)=>{const t=a*Math.PI/180;return[100+r*Math.sin(t),100-r*Math.cos(t)]};
+ let s=`<svg viewBox="0 0 200 200"><g id="wheel" style="transform-origin:100px 100px;transform:rotate(${gs.rot}deg)">`;
+ g.t.forEach((m,i)=>{const a=pt(i*seg,R),b=pt((i+1)*seg,R),c=pt((i+.5)*seg,63);s+=`<path d="M100 100L${a[0].toFixed(1)} ${a[1].toFixed(1)}A${R} ${R} 0 ${seg>180?1:0} 1 ${b[0].toFixed(1)} ${b[1].toFixed(1)}Z" fill="${segCol(m)}" stroke="#fff" stroke-width="1.5"/><text x="${c[0].toFixed(1)}" y="${c[1].toFixed(1)}" fill="#fff" font-size="14" font-weight="800" text-anchor="middle" dominant-baseline="middle" transform="rotate(${((i+.5)*seg).toFixed(1)} ${c[0].toFixed(1)} ${c[1].toFixed(1)})">${m}x</text>`});
+ return s+`<circle cx="100" cy="100" r="13" fill="#fff"/></g></svg>`}
+function plinkoHTML(g){let p='';for(let k=0;k<6;k++)for(let i=0;i<=k;i++)p+=`<i class="peg" style="left:${(50+(2*i-k)*7.14).toFixed(2)}%;top:${8+k*12}%"></i>`;
+ const f=gs.o?gs.o.idx:null;
+ return`<div class="plk">${p}<i class="pball" id="pball" style="left:${f==null?50:(7.14+14.28*f).toFixed(2)}%;top:${f==null?2:80}%"></i><div class="bins">${g.t.map((m,i)=>`<span class="${f===i?'hit':''}" style="color:${segCol(m)}">${m}x</span>`).join('')}</div></div>`}
+function stageHTML(g,pre){const o=gs.o,id=g.id;
+ if(id==='coin')return`<div class="flipw"><div class="flip3" id="fl" style="transform:rotateY(${gs.fl}deg)"><div class="face coinf">H</div><div class="face coinf b">T</div></div></div>`;
+ if(id==='rb')return`<div class="flipw" style="width:98px;height:134px"><div class="flip3" id="fl" style="transform:rotateY(${o?180:0}deg)"><div class="face cardf back"></div><div class="face cardf b" style="color:${o&&o.out===0?'#d11':'#111'}">${o?gs.suit:''}</div></div></div>`;
+ if(id==='oe'||id==='dice')return`<div class="ball ${id==='dice'?'die':''}" id="ball">${gs.n!=null?gs.n:'?'}</div>`;
+ if(id==='rps')return`<div class="hand" id="hand">${o?['✊','✋','✌️'][o.out]:'✊'}</div>`;
+ if(id==='num')return`<div class="numr" id="numr">${o?o.out+1:'?'}</div>`;
+ if(g.k==='tiles')return`<div class="tiles">${g.t.map((_,i)=>{const m=o?o.rev[i]:null,c=m==null?'':m>=1?'w':'l';return`<div class="tl"><div class="tin ${o&&!pre?'flip':''} ${o&&o.tp===i?'pick':''}" id="t${i}"><div class="tf fr" role="button" tabindex="0" onclick="play(${i})" onkeydown="if(event.key==='Enter')play(${i})">?</div><div class="tf bk ${c}">${m==null?'?':m+'x'}</div></div></div>`}).join('')}</div>`;
+ if(g.bin)return plinkoHTML(g);
+ if(g.k==='wheel')return`<div class="whw"><div class="ptr">▼</div>${wheelSVG(g)}</div>`;
+ if(g.k==='slots')return`<div class="reels">${[0,1,2].map(i=>`<div class="reelw" id="rw${i}"><div class="rstrip" id="rs${i}"><span>${SY[reels[i]]}</span></div></div>`).join('')}</div>`;
+ if(g.k==='crash')return`<div class="cr" id="cr"><div class="crm" id="crm" style="${o?'color:#ff5c5c':''}">${o?o.cp.toFixed(2)+'x':'1.00x'}</div><div class="rk ${o?'boom':''}" id="rk" ${o?'style="left:88%;bottom:76%"':''}>${o?'💥':'🚀'}</div><div class="cash" id="cash"></div></div>`;
+ return''}
+const renderStage=()=>{const s=$('#stage');if(s)s.innerHTML=stageHTML(GM())};
+const setBusy=on=>{const e=$('#gp');if(e)e.classList.toggle('busy',on)};
+function setRes(t,ok){res=t?{t,ok}:null;const e=$('#res');if(e){e.textContent=t||'';e.className='res '+(ok===true?'ok':ok===null?'':'no')}}
+function pickOpt(i){pk=i;document.querySelectorAll('#opts button').forEach((b,j)=>b.classList.toggle('on',j===i))}
+async function animate(g,d,b){const o=d.o,id=g.id;
+ if(id==='coin'){const el=$('#fl'),t=Math.ceil(((gs.fl||0)+1440)/360)*360+o.out*180;el.parentNode.classList.add('jump');el.style.transition='transform 1.6s cubic-bezier(.2,.7,.2,1)';el.style.transform='rotateY('+t+'deg)';gs.fl=t;await sleep(1700);el.parentNode.classList.remove('jump');return}
+ if(id==='rb'){gs.suit=o.out===0?['♥','♦'][rnd(2)]:['♠','♣'][rnd(2)];const el=$('#fl'),bk=el.querySelector('.face.b');el.style.transition='none';el.style.transform='rotateY(0deg)';bk.textContent=gs.suit;bk.style.color=o.out===0?'#d11':'#111';await raf();el.style.transition='transform 1.4s cubic-bezier(.2,.7,.2,1)';el.style.transform='rotateY(1260deg)';await sleep(1500);return}
+ if(id==='oe'||id==='dice'){const el=$('#ball');gs.n=id==='oe'?(o.out===0?1+2*rnd(50):2+2*rnd(49)):(o.out===0?51+rnd(49):1+rnd(49));el.classList.add('rolling');const t=setInterval(()=>{el.textContent=1+rnd(99)},70);await sleep(1400);clearInterval(t);el.classList.remove('rolling');el.textContent=gs.n;return}
+ if(id==='rps'){const el=$('#hand'),H=['✊','✋','✌️'];el.classList.add('shaking');const t=setInterval(()=>{el.textContent=H[rnd(3)]},120);await sleep(1300);clearInterval(t);el.classList.remove('shaking');el.textContent=H[o.out];return}
+ if(id==='num'){const el=$('#numr'),t=setInterval(()=>{el.textContent=1+rnd(5)},70);await sleep(1200);clearInterval(t);el.textContent=o.out+1;return}
+ if(g.k==='tiles'){$('#stage').innerHTML=stageHTML(g,true);await raf();document.querySelectorAll('.tin').forEach((e,i)=>{e.style.transitionDelay=(i*70)+'ms';e.classList.add('flip')});await sleep(700+g.t.length*70);return}
+ if(g.bin){const ball=$('#pball'),path=Array.from({length:6},(_,i)=>i<o.idx);for(let i=5;i>0;i--){const j=rnd(i+1);[path[i],path[j]]=[path[j],path[i]]}
+  ball.style.left='50%';ball.style.top='8%';await sleep(320);let x=50,k=0;
+  for(const r of path){k++;x+=r?7.14:-7.14;ball.style.left=x+'%';ball.style.top=(k<6?8+k*12:80)+'%';await sleep(310)}
+  document.querySelectorAll('.bins span')[o.idx].classList.add('hit');await sleep(300);return}
+ if(g.k==='wheel'){const w=$('#wheel'),seg=360/g.t.length,des=(360-(((o.idx+.5)*seg)%360))%360,t=Math.ceil((gs.rot+1800)/360)*360+des;w.style.transition='transform 3s cubic-bezier(.12,.7,.1,1)';w.style.transform='rotate('+t+'deg)';gs.rot=t;await sleep(3150);return}
+ if(g.k==='slots'){const H=94;for(let i=0;i<3;i++){const s=$('#rs'+i),len=14+i*7,cells=[SY[reels[i]]];for(let j=1;j<len-1;j++)cells.push(SY[rnd(5)]);cells.push(SY[o.reels[i]]);s.style.transition='none';s.style.transform='translateY(0)';s.innerHTML=cells.map(c=>`<span>${c}</span>`).join('')}
+  await raf();for(let i=0;i<3;i++){const s=$('#rs'+i),len=14+i*7;s.style.transition=`transform ${1.3+i*.5}s cubic-bezier(.15,.75,.2,1)`;s.style.transform=`translateY(-${(len-1)*H}px)`}
+  await sleep(2400);reels=o.reels;if(d.w>b)for(let i=0;i<3;i++)$('#rw'+i).classList.add('win');return}
+ if(g.k==='crash')return crashAnim(g.o[pk],o)}
+function crashAnim(target,o){return new Promise(res=>{const stg=$('#cr'),rk=$('#rk'),mt=$('#crm'),cash=$('#cash'),won=o.cp>=target,lm=Math.log(Math.max(o.cp,target)*1.25),T=Math.max(1100,Math.min(3800,900+Math.log(o.cp)*900)),t0=performance.now();let last=0,cashed=false;
+ const ln=document.createElement('div');ln.className='tgt';ln.style.bottom=(8+Math.log(target)/lm*68)+'%';ln.textContent='Target '+target+'x';stg.appendChild(ln);
+ const f=t=>{const k=Math.min(1,(t-t0)/T),m=Math.pow(o.cp,k),p=Math.log(m)/lm,x=(8+p*80)+'%',y=(8+p*68)+'%';mt.textContent=m.toFixed(2)+'x';rk.style.left=x;rk.style.bottom=y;
+  if(t-last>55){last=t;const d=document.createElement('i');d.className='dot';d.style.left=x;d.style.bottom=y;stg.appendChild(d);setTimeout(()=>d.remove(),700)}
+  if(!cashed&&won&&m>=target){cashed=true;cash.style.opacity=1;cash.textContent='✓ Cashed out at '+target+'x'}
+  if(k<1)requestAnimationFrame(f);else{rk.textContent='💥';rk.classList.add('boom');mt.style.color='#ff5c5c';setTimeout(res,700)}};
+ requestAnimationFrame(f)})}
+function confetti(n){const cols=['#f5a300','#e11d74','#7c3aed','#0e9f6e','#3b82f6','#ffffff'],box=document.createElement('div');for(let i=0;i<n;i++){const p=document.createElement('i');p.className='cp';p.style.left=rnd(100)+'vw';p.style.background=cols[rnd(cols.length)];p.style.setProperty('--dx',(rnd(160)-80)+'px');p.style.setProperty('--r',rnd(720)+'deg');p.style.animationDuration=(1.4+Math.random()*1.4)+'s';p.style.animationDelay=(Math.random()*.3)+'s';box.appendChild(p)}document.body.appendChild(box);setTimeout(()=>box.remove(),3600)}
+function fx(win,big){const st=$('#stage');if(win){confetti(big?130:50);if(st){st.classList.add('glow');setTimeout(()=>st.classList.remove('glow'),1200)}}else if(st){st.classList.add('shake');setTimeout(()=>st.classList.remove('shake'),500)}}
+function floatDelta(d){const b=$('#bal');if(!b||!d||!b.getBoundingClientRect)return;const r=b.getBoundingClientRect(),e=document.createElement('div');e.className='fl '+(d>0?'ok':'no');e.textContent=(d>0?'+':'')+fmt(d);e.style.left=(r.left+r.width/2)+'px';e.style.top=r.bottom+'px';document.body.appendChild(e);setTimeout(()=>e.remove(),1300)}
+function setBal(n){const el=$('#bal'),from=ME.bal;ME.bal=n;if(!el||from===n)return;el.classList.add('bump');setTimeout(()=>el.classList.remove('bump'),500);const t0=performance.now(),f=t=>{const k=Math.min(1,(t-t0)/700);el.textContent='🪙 '+fmt(from+(n-from)*k);if(k<1)requestAnimationFrame(f)};requestAnimationFrame(f)}
+const resultText=(g,d)=>{const o=d.o;return g.k==='pick'?'Result: '+g.o[o.out]:g.k==='tiles'?'Tile '+(o.tp+1)+' held '+o.rev[o.tp]+'x':g.k==='wheel'?'Landed on '+g.t[o.idx]+'x':g.k==='slots'?(d.w>=gamebet*10?'Jackpot!':d.w?'Two match':'No match'):'Crashed at '+o.cp.toFixed(2)+'x'};
+let gamebet=0;
+async function refresh(){const d=await api('/state');if(d.ok&&!busy){DB=d.db;lastC=sigC();lastD=sigD()}}
+async function play(i){if(busy)return;const g=GM(),b=Math.floor(+$('#bet').value)||0;bet=b;gamebet=b;
+ if(!(b>=10)){setRes('Minimum bet is 10 coins.',false);return}
+ busy=true;seq++;setBusy(true);setRes('');
+ if(g.k==='tiles'&&gs.o){gs.o=null;renderStage()}
  const d=await api('/play',{game:g.id,bet:b,pick:pk,tile:i});
- if(!d.ok){busy=false;res={ok:false,t:d.err||'Could not play.'};return render()}
- const o=d.o,done=txt=>{res={ok:d.w>b,t:(d.w>b?'You won '+(d.w-b)+' coins. ':d.w===b?'Your bet came back. ':'You lost '+b+' coins. ')+txt};busy=false;sync()};
- if(g.k==='pick')return done('Result: '+g.o[o.out]);
- if(g.k==='tiles'){rev=o.rev;tp=o.tp;return done('Tile '+(o.tp+1)+' held '+o.rev[o.tp]+'x')}
- if(g.k==='wheel')return anim(14+o.idx,80,k=>{hit=k%g.t.length;document.querySelectorAll('.sg').forEach((s,j)=>s.classList.toggle('hit',j===hit))},()=>{hit=o.idx;done('Landed on '+g.t[o.idx]+'x')});
- if(g.k==='slots')return anim(10,90,()=>{for(let k=0;k<3;k++)$('#r'+k).textContent=SY[rnd(5)]},()=>{reels=o.reels;done(d.w>=b*10?'Jackpot!':d.w?'Two match':'No match')});
- if(g.k==='crash')return anim(16,70,k=>{cxv=Math.pow(o.cp,Math.min(k,16)/16).toFixed(2)+'x';$('#cx').textContent=cxv},()=>{cxv=o.cp.toFixed(2)+'x';done('Crashed at '+cxv)})}
-const daily=()=>adm('/daily',{}),recharge=c=>adm('/recharge',{coins:c}),dec=(id,ok)=>adm('/admin/resolve',{id,ok:!!ok}),adj=(id,d)=>adm('/admin/adjust',{id,d}),ban=id=>adm('/admin/ban',{id}),del=id=>adm('/admin/delete',{id}),tg=id=>adm('/admin/game',{id,on:!DB.cfg.games[id].on}),mx=(id,v)=>api('/admin/game',{id,max:+v}),wpSet=(id,v)=>{if(DB.cfg.games[id])DB.cfg.games[id].wp=v===null?null:+v;return api('/admin/game',{id,wp:v===null?null:+v}).then(sync)},wpAll=v=>api('/admin/gameall',{wp:v===null?null:+v}).then(sync),wpLbl=(id,v)=>{const e=document.getElementById('wl-'+id);if(e)e.textContent=v+'%'},cf=(k,v)=>api('/admin/cfg',{k,v}),wipe=()=>{if(confirm('Delete all users, history and settings?'))adm('/admin/reset',{})};
-const tb=(l,cur,fn)=>`<div class="tabs">${l.map(([k,t])=>`<button class="${cur===k?'on':''}" onclick="${fn}('${k}')">${t}</button>`).join('')}</div>`;
+ if(!d.ok){busy=false;seq++;setBusy(false);if(d._s===401){setTok('');ses=null;ME=null;return render()}setRes(d.err||'Could not play.',false);return}
+ gs.o=d.o;
+ try{await animate(g,d,b)}catch(x){console.error(x)}
+ const delta=d.w-b,win=d.w>b;
+ setRes((win?'You won '+delta+' coins! ':d.w===b?'Your bet came back. ':'You lost '+b+' coins. ')+resultText(g,d),win?true:d.w===b?null:false);
+ setBal(d.bal);floatDelta(delta);if(d.w!==b)fx(win,d.w>=b*10);
+ busy=false;seq++;setBusy(false);refresh()}
+/* ---------- live updates ---------- */
+const sigC=()=>JSON.stringify([ME&&ME.ban,DB.cfg.notice,DB.cfg.games,ses&&ses.warn]),sigD=()=>JSON.stringify([DB.reqs.map(r=>r.s),DB.tx[0]&&DB.tx[0].t,DB.users.map(u=>[u.id,u.bal,u.ban,u.username]),DB.st]);
+async function live(){if(!TOKEN||!ses||busy||document.hidden)return;const s0=seq,old=ME?ME.bal:0,d=await api('/state');if(busy||seq!==s0)return;
+ if(!d.ok){if(d._s===401){setTok('');ses=null;ME=null;render()}return}
+ DB=d.db;ME=d.me;ses={role:d.role,warn:d.warn};const nb=ME.bal;ME.bal=old;setBal(nb);
+ const c=sigC(),dd=sigD(),cc=c!==lastC,dc=dd!==lastD;lastC=c;lastD=dd;
+ if(ses.role==='admin'&&view==='admin'){if(!$('#modal').innerHTML){if(at==='us'){if(dc){$('#ulist').innerHTML=usersList();$('#ucount').textContent=DB.users.length+' players'}}else if((at==='ov'||at==='rq')&&(dc||cc))render()}}
+ else if(cc||(dc&&ut!=='games'))render()}
+const daily=()=>adm('/daily',{}),recharge=c=>adm('/recharge',{coins:c}),dec=(id,ok)=>adm('/admin/resolve',{id,ok:!!ok}),adj=(id,d)=>adm('/admin/adjust',{id,d}),ban=id=>adm('/admin/ban',{id}),
+del=id=>{if(confirm('Delete this player and all their data?'))adm('/admin/delete',{id})},tg=id=>adm('/admin/game',{id,on:!DB.cfg.games[id].on}),
+mx=(id,v)=>api('/admin/game',{id,max:+v}).then(()=>toast('Saved')),
+wpSet=(id,v)=>{if(DB.cfg.games[id])DB.cfg.games[id].wp=v===null?null:+v;return api('/admin/game',{id,wp:v===null?null:+v}).then(sync)},wpAll=v=>api('/admin/gameall',{wp:v===null?null:+v}).then(sync),
+wpLbl=(id,v)=>{const e=document.getElementById('wl-'+id);if(e)e.textContent=v+'%'},cf=(k,v)=>api('/admin/cfg',{k,v}).then(()=>toast('Saved')),wipe=()=>{if(confirm('Delete all users, history and settings?'))adm('/admin/reset',{})};
+const tb=(l,cur,fn,cls)=>`<div class="tabs ${cls||''}">${l.map(([k,t])=>`<button class="${cur===k?'on':''}" onclick="${fn}('${k}')">${t}</button>`).join('')}</div>`;
 const tbl=(h,r)=>r.length?`<div class="wrap"><table><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr>${r.map(x=>`<tr>${x.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</table></div>`:'<p class="mu">Nothing here yet.</p>';
-function authH(){const inf=auth.info?`<div class="info">${E(auth.info)}</div>`:'',er=auth.err?`<div class="no">${E(auth.err)}</div>`:'',t=auth.tab;let b;
- if(t==='admin')b=`<p class="mu">Admin sign in. The email and password are set in the server .env file.</p><div class="row"><input id="ae" type="email" placeholder="Admin email" autocomplete="username"></div><div class="row"><input id="ap" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')adminLogin()"></div>${er}<div class="row"><button class="p" onclick="adminLogin()">Sign in as admin</button></div>`;
- else if(t==='google')b=GCID?`<div id="gbtn" style="margin:12px 0"></div>${er}`:`<p class="mu">Google sign-in isn't set up on this server yet. Add GOOGLE_CLIENT_ID to the .env file.</p>`;
- else if(auth.sent)b=`${inf}<div class="row"><input id="code" inputmode="numeric" maxlength="6" placeholder="6-digit OTP" onkeydown="if(event.key==='Enter')verify()"></div>${er}<div class="row"><button class="p" onclick="verify()">Verify and continue</button><button onclick="setT(auth.tab)">Change</button></div>`;
- else b=`<div class="row"><input id="to" type="${t==='email'?'email':'tel'}" placeholder="${t==='email'?'you@example.com':'+91 98765 43210'}" onkeydown="if(event.key==='Enter')sendOtp()"></div>${er}<div class="row"><button class="p" onclick="sendOtp()">Send OTP</button></div>`;
- return`<div class="auth card"><div class="logo">PlayZone</div><p class="mu">14 games. Virtual coins only. Sign up or log in.</p>${tb([['email','Email OTP'],['phone','Phone OTP'],['google','Google'],['admin','Admin']],t,'setT')}${b}</div>`}
+/* ---------- login / signup ---------- */
+function authH(){const su=auth.mode==='signup';
+ return`<div class="auth card"><div class="logo">PlayZone</div><p class="mu">14 games. Virtual coins only.</p>${tb([['login','Login'],['signup','Sign up']].map(([k,t])=>[k,t]),auth.mode,'setMode')}
+ <div class="fld"><label for="un">Username</label><input id="un" value="${E(auth.u)}" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="your username" onkeydown="if(event.key==='Enter')doAuth()"></div>
+ <div class="fld"><label for="pw">Password</label><input class="pwf" id="pw" type="password" autocomplete="${su?'new-password':'current-password'}" placeholder="${su?'at least 6 characters':'your password'}" onkeydown="if(event.key==='Enter')doAuth()"></div>
+ ${su?`<div class="fld"><label for="pw2">Confirm password</label><input class="pwf" id="pw2" type="password" autocomplete="new-password" placeholder="type it again" onkeydown="if(event.key==='Enter')doAuth()"></div>`:''}
+ <label class="mu"><input type="checkbox" onchange="document.querySelectorAll('.pwf').forEach(i=>i.type=this.checked?'text':'password')"> Show password</label>
+ ${auth.err?`<div class="no" style="margin-top:8px">${E(auth.err)}</div>`:''}
+ <div class="row"><button class="p" style="width:100%" onclick="doAuth()">${su?'Create account':'Login'}</button></div>
+ ${su?`<p class="mu">Username: 3 to 20 letters, numbers, _ or .</p>`:'<p class="mu">Admin also logs in here with the admin username and password.</p>'}</div>`}
+/* ---------- games ---------- */
 function panel(){const g=GM(),c=DB.cfg.games[g.id],e=1-DB.cfg.edge/100;
- let h=`<button onclick="gid=null;render()">All games</button><div class="card" style="margin-top:10px"><h2>${g.ic} ${g.n}</h2><div class="mu">Max bet ${c.max} coins${c.on?'':' · switched off'}</div><div class="row"><input id="bet" type="number" min="10" value="${bet}" style="max-width:110px" aria-label="Bet"><button onclick="$('#bet').value=50">50</button><button onclick="$('#bet').value=100">100</button><button onclick="$('#bet').value=500">500</button></div>`;
- if(g.k==='pick')h+=`<div class="row">${g.o.map((o,i)=>`<button class="${pk===i?'on':''}" onclick="pk=${i};render()">${o}</button>`).join('')}</div><button class="p" onclick="play()">Play · pays ${(g.o.length*e).toFixed(2)}x</button>`;
- if(g.k==='tiles')h+=`<p class="mu">Pick a tile. Each hides a multiplier.</p><div class="tiles">${g.t.map((_,i)=>`<button class="tile ${tp===i?'hit':''}" onclick="play(${i})">${rev?rev[i]+'x':'?'}</button>`).join('')}</div>`;
- if(g.k==='wheel')h+=`<div class="strip">${g.t.map((m,i)=>`<span class="sg ${hit===i?'hit':''}">${m}x</span>`).join('')}</div><div class="row"><button class="p" onclick="play()">${g.bin?'Drop ball':'Spin'}</button></div>`;
- if(g.k==='slots')h+=`<div class="row">${reels.map((r,i)=>`<span class="reel" id="r${i}">${SY[r]}</span>`).join('')}</div><p class="mu">Three match pays 10x. Two match returns your bet.</p><button class="p" onclick="play()">Spin reels</button>`;
- if(g.k==='crash')h+=`<div class="big" id="cx">${cxv}</div><div class="row">${g.o.map((o,i)=>`<button class="${pk===i?'on':''}" onclick="pk=${i};render()">Cash out ${o}x</button>`).join('')}</div><button class="p" onclick="play()">Launch</button>`;
- return h+`<div class="res ${res&&res.ok?'ok':'no'}">${res?E(res.t):''}</div></div>`}
-function userH(){const u=U();if(!u){ses=null;return authH()}
- let h=`<div class="top"><div class="logo">PlayZone</div><div class="row" style="margin:0"><span class="pill">🪙 ${R(u.bal).toLocaleString()}</span><span class="mu">${E(u.name)}</span><button onclick="logout()">Log out</button></div></div><div class="hero">${E(DB.cfg.notice)}${u.ban?' · Your account is suspended.':''}</div>${tb([['games','Games'],['wallet','Wallet'],['hist','History']],ut,'setUt')}`;
+ const opts=(g.k==='pick'||g.k==='crash')?`<div class="row" id="opts">${g.o.map((o,i)=>`<button class="${pk===i?'on':''}" onclick="pickOpt(${i})">${g.k==='crash'?'Cash out '+o+'x':o}</button>`).join('')}</div>`:'';
+ const btn=g.k==='pick'?`Play · pays ${(g.o.length*e).toFixed(2)}x`:g.k==='wheel'?(g.bin?'Drop ball':'Spin'):g.k==='slots'?'Spin reels':g.k==='crash'?'Launch':'';
+ return`<button onclick="gid=null;render()">← All games</button><div class="card ${busy?'busy':''}" id="gp" style="margin-top:10px"><h2>${g.ic} ${g.n}</h2><div class="mu">Max bet ${c.max} coins${c.on?'':' · switched off'}${g.k==='tiles'?' · pick a tile to play':''}</div><div class="row"><input id="bet" type="number" min="10" value="${bet}" style="max-width:110px" aria-label="Bet"><button onclick="$('#bet').value=50">50</button><button onclick="$('#bet').value=100">100</button><button onclick="$('#bet').value=500">500</button></div><div class="stage" id="stage">${stageHTML(g)}</div>${opts}${btn?`<button class="p" style="margin-top:8px;width:100%" onclick="play()">${btn}</button>`:''}<div class="res ${res&&res.ok===true?'ok':res&&res.ok===null?'':'no'}" id="res">${res?E(res.t):''}</div></div>`}
+function userH(){const u=ME;if(!u){ses=null;return authH()}const isA=ses.role==='admin';
+ let h=`<div class="top"><div class="logo">PlayZone</div><div class="row" style="margin:0"><span class="pill" id="bal">🪙 ${fmt(u.bal)}</span><span class="mu">${E(u.username)}${isA?' (admin)':''}</span>${isA?`<button class="p" onclick="view='admin';render()">⚙ Admin Panel</button>`:''}<button onclick="logout()">Log out</button></div></div><div class="hero">${E(DB.cfg.notice)}${u.ban?' · Your account is suspended.':''}</div>${tb([['games','Games'],['wallet','Wallet'],['hist','History']],ut,'setUt')}`;
  if(ut==='games')h+=gid?panel():`<div class="grid">${G.map(g=>`<button class="gc" style="--h:${g.h}" onclick="openGame('${g.id}')"><i>${g.ic}</i><b>${g.n}</b><small>${DB.cfg.games[g.id].on?'Play now':'Off'}</small></button>`).join('')}</div>`;
- if(ut==='wallet'){const can=Date.now()-u.last>=864e5;h+=`<div class="card"><h2>Daily bonus</h2><button class="p" onclick="daily()">${can?'Claim '+DB.cfg.daily+' coins':'Come back tomorrow'}</button></div><div class="card"><h2>Recharge coins</h2><p class="mu">Demo recharge: choose a pack and an admin approves it. No real payment.</p><div class="row">${PACKS.map(c=>`<button onclick="recharge(${c})">${c.toLocaleString()} coins</button>`).join('')}</div>${tbl(['Coins','Status','Time'],DB.reqs.filter(r=>r.uid===u.id).map(r=>[r.c.toLocaleString(),r.s,new Date(r.t).toLocaleString()]))}</div>`}
- if(ut==='hist')h+=`<div class="card"><h2>History</h2>${tbl(['Type','Coins','Note','Time'],DB.tx.filter(t=>t.uid===u.id).slice(0,40).map(t=>[t.type,(t.amt>0?'+':'')+R(t.amt),E(t.note),new Date(t.t).toLocaleString()]))}</div>`;return h}
+ if(ut==='wallet'){const can=Date.now()-u.last>=864e5;h+=`<div class="card"><h2>Daily bonus</h2><button class="p" onclick="daily()">${can?'Claim '+DB.cfg.daily+' coins':'Come back tomorrow'}</button></div><div class="card"><h2>Recharge coins</h2><p class="mu">Demo recharge: choose a pack and an admin approves it. No real payment.</p><div class="row">${PACKS.map(c=>`<button onclick="recharge(${c})">${c.toLocaleString()} coins</button>`).join('')}</div>${tbl(['Coins','Status','Time'],DB.reqs.filter(r=>r.uid===u.id).map(r=>[r.c.toLocaleString(),r.s,when(r.t)]))}</div>`}
+ if(ut==='hist')h+=`<div class="card"><h2>History</h2>${tbl(['Type','Coins','Note','Time'],DB.tx.filter(t=>t.uid===u.id).slice(0,40).map(t=>[t.type,(t.amt>0?'+':'')+R(t.amt),E(t.note),when(t.t)]))}</div>`;return h}
+/* ---------- admin panel ---------- */
+const uname=u=>u.username||'(no username)';
+function userItem(u){return`<div class="item"><div class="av">${E(uname(u)[0].toUpperCase())}</div><div class="grow"><b>${E(uname(u))}</b>${u.ban?'<span class="badge no">banned</span>':''}${u.nopw?'<span class="badge mu">no password</span>':''}<div class="mu">${E([u.phone,u.email].filter(Boolean).join(' · ')||'No contact saved')}</div><div class="mu">Joined ${when(u.joined)}</div></div><span class="pill">🪙 ${fmt(u.bal)}</span><div class="acts"><button class="p sm" onclick="openEdit('${u.id}')">Edit</button><button class="sm" onclick="adj('${u.id}',100)">+100</button><button class="sm" onclick="adj('${u.id}',-100)">-100</button><button class="sm" onclick="ban('${u.id}')">${u.ban?'Unban':'Ban'}</button><button class="sm d" onclick="del('${u.id}')">Delete</button></div></div>`}
+function usersList(){const q=uq.trim().toLowerCase(),l=DB.users.filter(u=>!q||[u.username,u.phone,u.email,u.id].some(x=>String(x||'').toLowerCase().includes(q))).sort((a,b)=>b.joined-a.joined);
+ return(l.length?`<div class="list">${l.map(userItem).join('')}</div>`:'<p class="mu">No players found.</p>')}
+function searchUsers(v){uq=v;$('#ulist').innerHTML=usersList();$('#ucount').textContent=DB.users.length+' players'}
 function adminH(){const pend=DB.reqs.filter(r=>r.s==='pending').length;
- let h=`<div class="top"><div class="logo">PlayZone admin</div><button onclick="logout()">Log out</button></div>${tb([['ov','Overview'],['us','Users'],['rq','Recharges ('+pend+')'],['gm','Games'],['se','Settings']],at,'setAt')}`;
- if(at==='ov')h+=`<div class="grid">${[['Players',DB.users.length],['Coins held',R(DB.users.reduce((a,u)=>a+u.bal,0)).toLocaleString()],['Wagered',R(DB.st.w).toLocaleString()],['Paid out',R(DB.st.p).toLocaleString()],['House result',R(DB.st.w-DB.st.p).toLocaleString()],['Pending recharges',pend]].map(([a,b])=>`<div class="card" style="margin:0"><div class="mu">${a}</div><div class="logo">${b}</div></div>`).join('')}</div>`;
- if(at==='us')h+=`<div class="card"><h2>Players</h2>${tbl(['Name','Contact','Via','Coins','Actions'],DB.users.map(u=>[E(u.name)+(u.ban?' <span class="no">banned</span>':''),E(u.email||u.phone||''),u.prov,R(u.bal).toLocaleString(),`<button onclick="adj('${u.id}',100)">+100</button> <button onclick="adj('${u.id}',-100)">-100</button> <button onclick="ban('${u.id}')">${u.ban?'Unban':'Ban'}</button> <button class="d" onclick="del('${u.id}')">Delete</button>`]))}</div>`;
- if(at==='rq')h+=`<div class="card"><h2>Recharge requests</h2>${tbl(['Player','Coins','Status','Action'],DB.reqs.map(r=>{const u=DB.users.find(x=>x.id===r.uid);return[E(u?u.name:'?'),r.c.toLocaleString(),r.s,r.s==='pending'?`<button class="p" onclick="dec('${r.id}',1)">Approve</button> <button class="d" onclick="dec('${r.id}',0)">Reject</button>`:'']}))}</div>`;
- if(at==='gm')h+=`<div class="card"><h2>Games</h2><p class="mu">Win chance = how often a player wins a round (1 to 100%). Move the slider to set it. Press Natural to go back to normal odds.</p><div class="row" style="align-items:center"><b>All games</b><input type="range" id="wa" min="1" max="100" value="50" style="max-width:220px" oninput="document.getElementById('wal').textContent=this.value+'%'"><span id="wal" class="pill">50%</span><button class="p" onclick="wpAll($('#wa').value)">Apply to all</button><button onclick="wpAll(null)">All natural</button></div>${tbl(['Game','Max bet','Win chance','Status'],G.map(g=>{const w=DB.cfg.games[g.id].wp;return[g.ic+' '+g.n,`<input type="number" style="width:100px" value="${DB.cfg.games[g.id].max}" onchange="mx('${g.id}',this.value)" aria-label="Max bet">`,`<div class="row" style="margin:0;flex-wrap:nowrap;align-items:center"><input type="range" min="1" max="100" value="${w==null?50:w}" style="width:150px" aria-label="Win chance" oninput="wpLbl('${g.id}',this.value)" onchange="wpSet('${g.id}',this.value)"><span id="wl-${g.id}" class="pill" style="min-width:62px;text-align:center">${w==null?'Natural':w+'%'}</span><button onclick="wpSet('${g.id}',null)">Natural</button></div>`,`<button class="${DB.cfg.games[g.id].on?'on':''}" onclick="tg('${g.id}')">${DB.cfg.games[g.id].on?'On':'Off'}</button>`]}))}</div>`;
- if(at==='se')h+=`<div class="card"><h2>Settings</h2>${[['notice','Announcement',DB.cfg.notice],['edge','House edge %',DB.cfg.edge],['signup','Signup coins',DB.cfg.signup],['daily','Daily bonus coins',DB.cfg.daily]].map(([k,l,v])=>`<div class="row"><label class="mu" style="width:140px">${l}</label><input style="max-width:340px" value="${E(v)}" onchange="cf('${k}',this.value)"></div>`).join('')}<div class="row"><button class="d" onclick="wipe()">Reset all data</button></div><p class="mu">Admin email and password are set in the server .env file. All data is stored on the server.</p></div>`;return h}
-function render(){$('#app').innerHTML=!ready?'<p class="mu">Loading...</p>':!ses?authH():ses.role==='admin'?adminH():userH();
- if(ready&&!ses&&GCID&&auth.tab==='google'&&window.google&&$('#gbtn')){google.accounts.id.initialize({client_id:GCID,callback:async r=>{const d=await api('/google',{credential:r.credential});if(d.ok){setTok(d.token);sync()}else{auth.err=d.err||'Google sign-in failed.';render()}}});google.accounts.id.renderButton($('#gbtn'),{theme:'outline',size:'large'})}}
-api('/config').then(c=>{GCID=c.googleClientId||'';if(GCID){const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.onload=render;document.head.appendChild(s)}}).finally(sync);
+ let h=`<div class="top"><div class="logo">Admin Panel</div><div class="row" style="margin:0"><button class="p" onclick="view='play';render()">🎮 Games</button><button onclick="logout()">Log out</button></div></div>${ses.warn?`<div class="card no"><b>⚠ Storage problem</b><div class="mu">${E(ses.warn)}</div></div>`:''}${tb([['ov','Overview'],['us','Users'],['rq','Recharges'+(pend?' ('+pend+')':'')],['gm','Games'],['se','Settings']],at,'setAt','sc')}`;
+ if(at==='ov'){const nm=id=>{const u=DB.users.find(x=>x.id===id);return u?uname(u):id==='admin'?'admin':'?'};
+  h+=`<div class="stats">${[['Players',DB.users.length],['Coins held',fmt(DB.users.reduce((a,u)=>a+u.bal,0))],['Wagered',fmt(DB.st.w)],['Paid out',fmt(DB.st.p)],['House result',fmt(DB.st.w-DB.st.p)],['Pending recharges',pend]].map(([a,b])=>`<div class="card"><div class="mu">${a}</div><div class="logo">${b}</div></div>`).join('')}</div><div class="card"><h2>Recent activity</h2>${tbl(['Player','Type','Coins','Note','Time'],DB.tx.filter(t=>t.uid!=='admin').slice(0,12).map(t=>[E(nm(t.uid)),t.type,`<span class="${t.amt>0?'ok':t.amt<0?'no':''}">${t.amt>0?'+':''}${R(t.amt)}</span>`,E(t.note),when(t.t)]))}</div>`}
+ if(at==='us')h+=`<div class="card"><div class="sec"><h2>Players</h2><span class="mu" id="ucount">${DB.users.length} players</span></div><div class="fld" style="margin-top:8px"><input id="usearch" type="search" placeholder="Search by username, phone, email or ID" value="${E(uq)}" oninput="searchUsers(this.value)" autocomplete="off"></div><div id="ulist">${usersList()}</div></div>`;
+ if(at==='rq')h+=`<div class="card"><h2>Recharge requests</h2>${DB.reqs.length?`<div class="list">${DB.reqs.map(r=>{const u=DB.users.find(x=>x.id===r.uid);return`<div class="item"><div class="grow"><b>${E(u?uname(u):'?')}</b><div class="mu">${when(r.t)}</div></div><span class="pill">🪙 ${r.c.toLocaleString()}</span><b class="${r.s==='approved'?'ok':r.s==='rejected'?'no':''}">${r.s}</b>${r.s==='pending'?`<div class="acts"><button class="p sm" onclick="dec('${r.id}',1)">Approve</button><button class="sm d" onclick="dec('${r.id}',0)">Reject</button></div>`:''}</div>`}).join('')}</div>`:'<p class="mu">No requests yet.</p>'}</div>`;
+ if(at==='gm')h+=`<div class="card"><h2>Win chance (all games)</h2><p class="mu">Win chance is how often a player wins a round, from 1 to 100%. Natural means the normal odds.</p><div class="row"><input type="range" id="wa" min="1" max="100" value="50" style="flex:1;min-width:140px" oninput="document.getElementById('wal').textContent=this.value+'%'"><span id="wal" class="pill">50%</span><button class="p" onclick="wpAll($('#wa').value)">Apply to all</button><button onclick="wpAll(null)">All natural</button></div></div>
+ <div class="list">${G.map(g=>{const c=DB.cfg.games[g.id],w=c.wp;return`<div class="card" style="margin:0"><div class="sec"><h3>${g.ic} ${g.n}</h3><button class="${c.on?'on':''}" onclick="tg('${g.id}')">${c.on?'On':'Off'}</button></div><div class="row"><span class="mu">Max bet</span><input type="number" style="max-width:110px" value="${c.max}" onchange="mx('${g.id}',this.value)" aria-label="Max bet"></div><div class="row"><span class="mu">Win chance</span><input type="range" min="1" max="100" value="${w==null?50:w}" style="flex:1;min-width:130px" aria-label="Win chance" oninput="wpLbl('${g.id}',this.value)" onchange="wpSet('${g.id}',this.value)"><span id="wl-${g.id}" class="pill" style="min-width:70px;text-align:center">${w==null?'Natural':w+'%'}</span><button class="sm" onclick="wpSet('${g.id}',null)">Natural</button></div></div>`}).join('')}</div>`;
+ if(at==='se')h+=`<div class="card"><h2>Settings</h2>${[['notice','Announcement',DB.cfg.notice],['edge','House edge %',DB.cfg.edge],['signup','Signup coins',DB.cfg.signup],['daily','Daily bonus coins',DB.cfg.daily]].map(([k,l,v])=>`<div class="fld"><label>${l}</label><input value="${E(v)}" onchange="cf('${k}',this.value)"></div>`).join('')}<div class="row"><button class="d" onclick="wipe()">Reset all data</button></div><p class="mu">Admin username and password are set on the server (ADMIN_USER and ADMIN_PASSWORD). All data is stored on the server.</p></div>`;return h}
+/* ---------- edit player ---------- */
+function closeModal(){$('#modal').innerHTML='';ed=null}
+function openEdit(id){const u=DB.users.find(x=>x.id===id);if(!u)return;ed={id};
+ const hist=DB.tx.filter(t=>t.uid===id).slice(0,8);
+ $('#modal').innerHTML=`<div class="ov" onclick="if(event.target===this)closeModal()"><div class="md"><div class="sec"><h2>Edit player</h2><button onclick="closeModal()">Close</button></div>
+ <div class="fld"><label>Username</label><input id="eu" value="${E(u.username)}" autocapitalize="none"></div>
+ <div class="fld"><label>Phone</label><input id="ep" value="${E(u.phone)}" inputmode="tel"></div>
+ <div class="fld"><label>Email</label><input id="ee" value="${E(u.email)}" inputmode="email"></div>
+ <div class="fld"><label>Coins (exact balance)</label><input id="ec" type="number" min="0" value="${R(u.bal)}"></div>
+ <div id="merr" class="no"></div><div class="row"><button class="p" onclick="saveEdit()">Save details</button><button onclick="ban('${u.id}');closeModal()">${u.ban?'Unban':'Ban'} player</button></div>
+ <hr style="border:0;border-top:1px solid var(--bd);margin:14px 0"><h3>Password</h3>
+ <div class="pwbox" id="pwshow">Hidden</div><div class="row"><button onclick="viewPw()">👁 View password</button><button onclick="copyPw()">Copy</button></div>
+ <div class="fld" style="margin-top:8px"><label>New password</label><input id="enp" placeholder="at least 6 characters" autocomplete="off"></div><div class="row"><button class="p" onclick="savePw()">Change password</button></div>
+ <hr style="border:0;border-top:1px solid var(--bd);margin:14px 0"><h3>Recent activity</h3>${tbl(['Type','Coins','Note'],hist.map(t=>[t.type,(t.amt>0?'+':'')+R(t.amt),E(t.note)]))}</div></div>`}
+async function saveEdit(){const d=await api('/admin/edit',{id:ed.id,username:$('#eu').value,phone:$('#ep').value,email:$('#ee').value,coins:$('#ec').value});if(!d.ok){$('#merr').textContent=d.err||'Could not save.';return}toast('Player saved');closeModal();sync()}
+async function viewPw(){const d=await api('/admin/viewpw',{id:ed.id});$('#pwshow').textContent=d.ok?d.pw:(d.err||'Could not read it.')}
+async function copyPw(){const t=$('#pwshow').textContent;try{await navigator.clipboard.writeText(t);toast('Copied')}catch(e){toast('Copy not allowed here')}}
+async function savePw(){const d=await api('/admin/setpw',{id:ed.id,pw:$('#enp').value});if(!d.ok){$('#merr').textContent=d.err||'Could not change.';return}$('#merr').textContent='';$('#enp').value='';$('#pwshow').textContent='Hidden';toast('Password changed');sync()}
+function render(){$('#app').innerHTML=!ready?'<p class="mu">Loading...</p>':!ses?authH():(ses.role==='admin'&&view==='admin')?adminH():userH()}
+setInterval(live,3000);document.addEventListener('visibilitychange',live);window.addEventListener('focus',live);
+sync();
 </script></body></html>
