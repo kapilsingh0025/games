@@ -12,9 +12,13 @@ const G = {
   orb: { n: 'Orbit Spin', k: 'wheel', t: [0, .5, 1, 1.5, 0, 2.5] }, whl: { n: 'Lucky Wheel', k: 'wheel', t: [0, 0, .5, 1, 1.5, 2, 0, 2.5] },
   pli: { n: 'Plinko', k: 'wheel', bin: 1, t: [4, 1.8, .7, .3, .7, 1.8, 4] }, slt: { n: 'Slot Machine', k: 'slots' }, crs: { n: 'Crash Rocket', k: 'crash', o: [1.5, 2, 3, 5] }
 };
-const seed = () => { const g = {}; for (const k in G) g[k] = { on: true, max: 1000 }; return { users: [], tx: [], reqs: [], st: { w: 0, p: 0 }, cfg: { notice: 'Virtual coins only. Coins have no cash value.', edge: 3, signup: 1000, daily: 100, games: g } }; };
+const seed = () => { const g = {}; for (const k in G) g[k] = { on: true, max: 1000 }; return { users: [], tx: [], reqs: [], st: { w: 0, p: 0 }, cfg: { notice: 'Virtual coins only. Coins have no cash value.', edge: 3, signup: 1000, daily: 100, bgv: 0, bgt: '', bgo: 55, games: g } }; };
 let DB; try { DB = JSON.parse(fs.readFileSync(FILE, 'utf8')); } catch { DB = seed(); }
 (function fix() { const s0 = seed(); for (const k in s0) if (!(k in DB)) DB[k] = s0[k]; for (const k in s0.cfg) if (!(k in DB.cfg)) DB.cfg[k] = s0.cfg[k]; for (const k in G) if (!DB.cfg.games[k]) DB.cfg.games[k] = s0.cfg.games[k]; })();
+let BG = null, BGT = 'image/jpeg';
+const bgFile = () => path.join(DIR, 'bg.bin');
+try { if (DB.cfg.bgv) { BG = fs.readFileSync(bgFile()); BGT = DB.cfg.bgt || 'image/jpeg'; } } catch { DB.cfg.bgv = 0; }
+const clearBg = () => { BG = null; DB.cfg.bgv = 0; DB.cfg.bgt = ''; try { fs.unlinkSync(bgFile()); } catch {} };
 let saveErr = '';
 function save() {
   try { fs.mkdirSync(DIR, { recursive: true }); const t = FILE + '.tmp'; fs.writeFileSync(t, JSON.stringify(DB)); fs.renameSync(t, FILE); saveErr = ''; }
@@ -89,8 +93,17 @@ const A = {
   '/admin/resolve': b => { const r = DB.reqs.find(x => x.id === b.id); if (r && r.s === 'pending') { r.s = b.ok ? 'approved' : 'rejected'; const u = real().find(x => x.id === r.uid); if (b.ok && u) { u.bal += r.c; tx(u.id, 'recharge', r.c, 'Recharge approved'); } } },
   '/admin/game': b => { const c = DB.cfg.games[b.id]; if (c) { if ('on' in b) c.on = !!b.on; if ('max' in b) c.max = Math.max(10, Math.floor(+b.max) || 10); if ('wp' in b) c.wp = b.wp === null ? null : Math.max(1, Math.min(100, Math.floor(+b.wp) || 1)); } },
   '/admin/gameall': b => { const v = b.wp === null ? null : Math.max(1, Math.min(100, Math.floor(+b.wp) || 1)); for (const k in DB.cfg.games) DB.cfg.games[k].wp = v; },
-  '/admin/cfg': b => { if (b.k === 'notice') DB.cfg.notice = String(b.v).slice(0, 120); else if (['edge', 'signup', 'daily'].includes(b.k)) DB.cfg[b.k] = Math.max(0, Math.min(b.k === 'edge' ? 50 : 1e6, +b.v || 0)); },
-  '/admin/reset': () => { DB = seed(); }
+  '/admin/cfg': b => { if (b.k === 'notice') DB.cfg.notice = String(b.v).slice(0, 120); else if (['edge', 'signup', 'daily', 'bgo'].includes(b.k)) DB.cfg[b.k] = Math.max(0, Math.min(b.k === 'edge' ? 50 : b.k === 'bgo' ? 90 : 1e6, +b.v || 0)); },
+  '/admin/bg': b => {
+    const m = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/.exec(String(b.data || '')); if (!m) return { err: 'Please choose a JPG, PNG or WebP image.' };
+    const buf = Buffer.from(m[2], 'base64'); if (buf.length > 1.5e6) return { err: 'Image is too large (max 1.5 MB).' };
+    const t = buf[0] === 0xff && buf[1] === 0xd8 ? 'image/jpeg' : buf.slice(1, 4).toString() === 'PNG' ? 'image/png' : buf.slice(0, 4).toString() === 'RIFF' && buf.slice(8, 12).toString() === 'WEBP' ? 'image/webp' : '';
+    if (!t) return { err: 'This file is not a valid image.' };
+    BG = buf; BGT = t; DB.cfg.bgt = t; DB.cfg.bgv = Date.now();
+    try { fs.mkdirSync(DIR, { recursive: true }); fs.writeFileSync(bgFile(), buf); } catch (err) { console.error('Cannot save background file:', err.code || err.message); }
+  },
+  '/admin/bgreset': () => { clearBg(); },
+  '/admin/reset': () => { DB = seed(); clearBg(); }
 };
 const server = http.createServer((req, res) => {
   const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress, url = req.url.split('?')[0];
@@ -98,12 +111,16 @@ const server = http.createServer((req, res) => {
   res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self'; img-src 'self' data:");
   const J = (c, o) => { res.writeHead(c, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(o)); };
   if (req.method === 'GET' && url === '/') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); return fs.createReadStream(path.join(__dirname, 'index.html')).pipe(res); }
+  if (req.method === 'GET' && url === '/bg') { if (!BG) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'Content-Type': BGT, 'Content-Length': BG.length, 'Cache-Control': 'public, max-age=31536000, immutable' }); return res.end(BG); }
   if (url === '/health') return J(200, { ok: true, saved: !saveErr });
   if (!url.startsWith('/api/')) return J(404, { ok: false });
-  let raw = ''; req.on('data', d => { raw += d; if (raw.length > 1e4) req.destroy(); });
+  const lim = url === '/api/admin/bg' ? 2.5e6 : 1e4;
+  if (lim > 1e4) { const t0 = unsign((req.headers.authorization || '').slice(7)); if (!t0 || t0.r !== 'a') { res.writeHead(401, { 'Content-Type': 'application/json', Connection: 'close' }); return res.end('{"ok":false,"err":"Please log in again."}'); } }
+  let raw = ''; req.on('data', d => { raw += d; if (raw.length > lim) req.destroy(); });
   req.on('end', async () => {
     try {
       const b = raw ? JSON.parse(raw) : {}, a = unsign((req.headers.authorization || '').slice(7)), p = url.slice(4);
+      if (p === '/theme') return J(200, { bgv: DB.cfg.bgv || 0, bgo: DB.cfg.bgo });
       if (p === '/auth/signup') {
         const n = uname(b.username);
         if (limited('s:' + ip, 8)) return J(429, { ok: false, err: 'Too many attempts. Wait a minute.' });
