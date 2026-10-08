@@ -1,28 +1,24 @@
-# PlayZone
+# PlayZone — Ludo/Admin fix
 
-Virtual-coin games (14) with simple username + password login and an admin panel. Zero dependencies, Node 18+.
+This build fixes the Ludo and admin issues from the previous build.
 
-## Run
-    cp .env.example .env     # then edit the values
-    node server.js           # open http://localhost:3000
+## Ludo
+- Real visual 15x15 Ludo-style board with four colored home areas and center.
+- Four player token sets are visible on the board.
+- Legal tokens pulse/can be clicked after a valid dice roll.
+- Large playable dice button shows the rolled value and whose turn it is.
+- Player/turn chips show all players.
+- Random 2/3/4-player matchmaking.
+- Friend username invite flow with accept/decline.
+- Friend already in another Ludo match is rejected cleanly.
+- Existing Ludo match/invite is restored when opening Ludo.
+- Live state and chat continue through SSE.
 
-## Login
-- Players: Sign up with a username and password (6+ characters), then Login.
-- Admin: Login with ADMIN_USER and ADMIN_PASSWORD on the same form. The admin can play every game and
-  presses the "Admin Panel" button at the top to open the panel.
+## Admin
+- Restored admin action routing and server-side handlers.
+- User, balance, game, settings, withdrawal and reset actions work through the admin API.
 
-## Admin panel
-Overview, Users (search, edit username/phone/email/coins, view or change password, ban, delete),
-Recharges, Games (on/off, max bet, win chance 1-100%), Database (space used, clean up, delete bet history), Settings (announcement, house edge, signup/daily coins,
-background image upload with dimming slider).
-
-## Data
-Everything is stored in DATA_DIR/db.json (the background image in DATA_DIR/bg.bin). On Render, attach a persistent disk and point DATA_DIR to it,
-otherwise data resets on each deploy. Coins have no cash value.
-
-## Safety prompts
-Logout, deleting a player, deleting bet history, cleaning or resetting the database and deleting your own account all ask Yes/No first.
-Players can delete their own account from the Account tab after entering their password.
-
-## Risk multiplier
-Before each round a player can choose a risk multiplier from 1x to 10x. Wins then happen about that many times less often but pay that many times more, so the long-run payout stays the same.
+## Validation
+- `node --check server.js` passes.
+- All client script blocks pass `node --check`.
+- Local API flow tested: signup -> friend invite -> invite state -> accept -> match state.

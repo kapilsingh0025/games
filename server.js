@@ -75,7 +75,7 @@ const LUDO = new Map(), LUSER = new Map(), LSSE = new Map(), LSTART = [0, 13, 26
 const lcell = (pl, s) => (LSTART[pl] + s) % 52, lname = u => u.username || 'player';
 const lsend = (uid, o) => { const st = LSSE.get(uid); if (st) { const d = 'data: ' + JSON.stringify(o) + '\n\n'; st.forEach(r => { try { r.write(d); } catch {} }); } };
 function llegal(m) { const d=m.dice,out=[]; if(!d)return out; (m.tk[m.turn]||[]).forEach((s,i)=>{if(s===-1?d===6:s+d<=56)out.push(i)}); return out; }
-const lview=(m,uid)=>{const me=m.p.indexOf(uid);return{id:m.id,status:m.status,stake:m.stake,players:m.need,me,names:m.n,tk:m.tk,turn:m.turn,dice:m.dice,legal:m.status==='play'&&me===m.turn?llegal(m):[],last:m.last,win:m.win,pay:m.pay,why:m.why,tl:Math.max(0,Math.ceil((m.turnAt+LTURN-Date.now())/1000))};};
+const lview=(m,uid)=>{const me=m.p.indexOf(uid);return{id:m.id,status:m.status,stake:m.stake,players:m.need,me,names:m.n,targetName:m.targetName||'',meName:m.n[me]||'',tk:m.tk,turn:m.turn,dice:m.dice,legal:m.status==='play'&&me===m.turn?llegal(m):[],last:m.last,win:m.win,pay:m.pay,why:m.why,tl:Math.max(0,Math.ceil((m.turnAt+LTURN-Date.now())/1000))};};
 const lpush=m=>m.p.forEach(id=>lsend(id,{type:'state',m:lview(m,id)}));
 const lesc=m=>{DB.esc=(DB.esc||[]).filter(e=>e.id!==m.id);if(m.stake&&m.status==='wait'||m.stake&&m.status==='play')DB.esc.push({id:m.id,uids:m.p.slice(),stake:m.stake});};
 function ludoDrop(m){m.status='gone';LUDO.delete(m.id);m.p.forEach(id=>LUSER.delete(id));lesc(m);save();}
@@ -103,6 +103,7 @@ function ludoJoin(u,stakeIn,needIn,friend,accept){
     target=real().find(x=>x.username===friendName);
     if(!target)return{err:'Friend username not found.'};
     if(target.id===u.id)return{err:'You cannot invite yourself.'};
+    if(LUSER.has(target.id))return{err:'That friend is already in a Ludo match.'};
     const existing=[...LUDO.values()].find(x=>x.status==='wait'&&x.target===target.id&&x.p[0]===u.id);
     if(existing)return{err:'Invite already sent. Waiting for your friend.'};
   }
