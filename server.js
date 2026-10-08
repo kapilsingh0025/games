@@ -75,27 +75,24 @@ const LUDO = new Map(), LUSER = new Map(), LSSE = new Map(), LSTART = [0, 13, 26
 const lcell = (pl, s) => (LSTART[pl] + s) % 52, lname = u => u.username || 'player';
 const lsend = (uid, o) => { const st = LSSE.get(uid); if (st) { const d = 'data: ' + JSON.stringify(o) + '\n\n'; st.forEach(r => { try { r.write(d); } catch {} }); } };
 function llegal(m) { const d=m.dice,out=[]; if(!d)return out; (m.tk[m.turn]||[]).forEach((s,i)=>{if(s===-1?d===6:s+d<=56)out.push(i)}); return out; }
-const lview=(m,uid)=>{const me=m.p.indexOf(uid);return{id:m.id,status:m.status,stake:m.stake,players:m.need,me,names:m.n,targetName:m.targetName||'',meName:m.n[me]||'',tk:m.tk,turn:m.turn,dice:m.dice,legal:m.status==='play'&&me===m.turn?llegal(m):[],last:m.last,win:m.win,pay:m.pay,why:m.why,tl:Math.max(0,Math.ceil((m.turnAt+LTURN-Date.now())/1000))};};
+const lview=(m,uid)=>{const me=m.p.indexOf(uid);return{id:m.id,status:m.status,stake:0,players:m.need,me,names:m.n,targetName:m.targetName||'',meName:m.n[me]||'',tk:m.tk,turn:m.turn,dice:m.dice,legal:m.status==='play'&&me===m.turn?llegal(m):[],last:m.last,win:m.win,pay:0,why:m.why,tl:Math.max(0,Math.ceil((m.turnAt+LTURN-Date.now())/1000))};};
 const lpush=m=>m.p.forEach(id=>lsend(id,{type:'state',m:lview(m,id)}));
 const lesc=m=>{DB.esc=(DB.esc||[]).filter(e=>e.id!==m.id);if(m.stake&&m.status==='wait'||m.stake&&m.status==='play')DB.esc.push({id:m.id,uids:m.p.slice(),stake:m.stake});};
 function ludoDrop(m){m.status='gone';LUDO.delete(m.id);m.p.forEach(id=>LUSER.delete(id));lesc(m);save();}
-function ludoEnd(m,w,why){if(m.status==='done')return;m.status='done';m.win=w;m.why=why;m.dice=null;const pay=m.stake?Math.floor(m.stake*m.need*(1-DB.cfg.edge/100)):0;m.pay=pay;m.p.forEach((id,i)=>{const u=DB.users.find(x=>x.id===id);LUSER.delete(id);if(!u||!m.stake)return;if(i===w)u.bal+=pay;tx(id,i===w?'win':'loss',i===w?pay-m.stake:-m.stake,'Ludo '+m.need+' players');if(!u.isAdmin){DB.st.w+=m.stake;if(i===w)DB.st.p+=pay;}});lesc(m);save();setTimeout(()=>LUDO.delete(m.id),6e4).unref();}
+function ludoEnd(m,w,why){if(m.status==='done')return;m.status='done';m.win=w;m.why=why;m.dice=null;m.pay=0;m.p.forEach(id=>LUSER.delete(id));save();lpush(m);setTimeout(()=>LUDO.delete(m.id),6e4).unref();}
 function ludoRoll(m){const d=rnd(6)+1;m.dice=d;m.sixes=d===6?m.sixes+1:0;m.last={by:m.turn,d,note:''};if(m.sixes>=3){m.last.note='Three sixes in a row - turn lost';m.dice=null;m.sixes=0;m.turn=(m.turn+1)%m.need;}else if(!llegal(m).length){m.last.note='No move possible';m.dice=null;m.sixes=0;m.turn=(m.turn+1)%m.need;}m.turnAt=Date.now();}
-function ludoMove(m,i){const pl=m.turn,d=m.dice,t=m.tk[pl];let extra=d===6,note='';t[i]=t[i]===-1?0:t[i]+d;const s=t[i];if(s===56){extra=true;note='A token reached home';}else if(s<=50&&!LSAFE.has(lcell(pl,s))){let hit=0;for(let q=0;q<m.need;q++){if(q===pl)continue;m.tk[q].forEach((os,j,o)=>{if(os>=0&&os<=50&&lcell(q,os)===lcell(pl,s)){o[j]=-1;hit++;}});}if(hit){extra=true;note='Captured '+hit+(hit>1?' tokens':' token');}}m.last={by:pl,d,note};m.dice=null;m.turnAt=Date.now();if(t.every(x=>x===56))return ludoEnd(m,pl,'won');if(!extra){m.sixes=0;m.turn=(pl+1)%m.need;}}
+function ludoMove(m,i){const pl=m.turn,d=m.dice,t=m.tk[pl];let extra=d===6,note='';if(t[i]===-1){if(d!==6)return;t[i]=0;}else{t[i]+=d;}const s=t[i];if(s===56){extra=true;note='A token reached home';}else if(s<=50&&!LSAFE.has(lcell(pl,s))){let hit=0;for(let q=0;q<m.need;q++){if(q===pl)continue;m.tk[q].forEach((os,j,o)=>{if(os>=0&&os<=50&&lcell(q,os)===lcell(pl,s)){o[j]=-1;hit++;}});}if(hit){extra=true;note='Captured '+hit+(hit>1?' tokens':' token');}}m.last={by:pl,d,note};m.dice=null;m.turnAt=Date.now();if(t.every(x=>x===56))return ludoEnd(m,pl,'won');if(!extra){m.sixes=0;m.turn=(pl+1)%m.need;}}
 function ludoAuto(m){const pl=m.turn;m.idle[pl]++;if(m.idle[pl]>=3){ludoEnd(m,(pl+1)%m.need,'timeout');return lpush(m);}if(!m.dice)ludoRoll(m);if(m.dice){const l=llegal(m);if(l.length)ludoMove(m,l[rnd(l.length)]);else{m.dice=null;m.turn=(pl+1)%m.need;}}m.turnAt=Date.now();lpush(m);}
 function ludoJoin(u,stakeIn,needIn,friend,accept){
-  const c=DB.cfg.games.ldo, st=Math.floor(+stakeIn)||0, need=Math.max(2,Math.min(4,Math.floor(+needIn)||2));
+  const c=DB.cfg.games.ldo, need=Math.max(2,Math.min(4,Math.floor(+needIn)||2));
   if(u.ban)return{err:'Your account is suspended by admin.'};
   if(!c.on)return{err:'This game is switched off.'};
-  if(st!==0&&!(st>=10&&st<=c.max))return{err:`Stake must be 0 (free game) or between 10 and ${c.max} coins.`};
-  if(st>u.bal)return{err:'Not enough coins.'};
   if(accept){
-    const m=[...LUDO.values()].find(x=>x.status==='wait'&&x.target===u.id&&x.stake===st&&x.p.length< x.need);
+    const m=[...LUDO.values()].find(x=>x.status==='wait'&&x.target===u.id&&x.p.length<x.need);
     if(!m)return{err:'No pending invite for you.'};
-    u.bal-=st; m.p.push(u.id);m.n.push(lname(u));m.tk.push([-1,-1,-1,-1]);
-    delete m.target;
+    m.p.push(u.id);m.n.push(lname(u));m.tk.push([-1,-1,-1,-1]);delete m.target;
     if(m.p.length===m.need){if(rnd(2)){m.p.reverse();m.n.reverse();m.tk.reverse();}m.status='play';m.turn=0;m.turnAt=Date.now();}
-    LUSER.set(u.id,m.id);lesc(m);save();lpush(m);return{m:lview(m,u.id)};
+    LUSER.set(u.id,m.id);save();lpush(m);return{m:lview(m,u.id)};
   }
   const friendName=uname(friend||'');
   let target=null;
@@ -107,14 +104,20 @@ function ludoJoin(u,stakeIn,needIn,friend,accept){
     const existing=[...LUDO.values()].find(x=>x.status==='wait'&&x.target===target.id&&x.p[0]===u.id);
     if(existing)return{err:'Invite already sent. Waiting for your friend.'};
   }
-  u.bal-=st;
-  let m=[...LUDO.values()].find(x=>x.status==='wait'&&!x.target&&x.stake===st&&x.need===need&&x.p.length<need&&x.p[0]!==u.id);
+  let m=[...LUDO.values()].find(x=>x.status==='wait'&&!x.target&&x.need===need&&x.p.length<need&&x.p[0]!==u.id);
   if(target)m=null;
-  if(m){m.p.push(u.id);m.n.push(lname(u));m.tk.push([-1,-1,-1,-1]);if(m.p.length===need){if(rnd(2)){m.p.reverse();m.n.reverse();m.tk.reverse();}m.status='play';m.turn=0;m.turnAt=Date.now();}}
-  else{m={id:crypto.randomUUID(),status:'wait',stake:st,need,p:[u.id],n:[lname(u)],tk:[[-1,-1,-1,-1]],turn:0,dice:null,sixes:0,mk:Date.now(),turnAt:Date.now(),idle:[0],last:null,win:-1,pay:0,why:'',target:target?target.id:null,targetName:target?target.username:''};LUDO.set(m.id,m);}
-  LUSER.set(u.id,m.id);lesc(m);save();lpush(m);return{m:lview(m,u.id)};
+  if(m){
+    m.p.push(u.id);m.n.push(lname(u));m.tk.push([-1,-1,-1,-1]);
+    if(m.p.length===need){if(rnd(2)){m.p.reverse();m.n.reverse();m.tk.reverse();}m.status='play';m.turn=0;m.turnAt=Date.now();}
+  }else{
+    m={id:crypto.randomUUID(),status:'wait',stake:0,need,p:[u.id],n:[lname(u)],tk:[[-1,-1,-1,-1]],turn:0,dice:null,sixes:0,mk:Date.now(),turnAt:Date.now(),idle:[0],last:null,win:-1,pay:0,why:'',target:target?target.id:null,targetName:target?target.username:''};
+    LUDO.set(m.id,m);
+    if(target)lsend(target.id,{type:'invite',invite:{status:'invite',id:m.id,players:m.need,from:lname(u)}});
+  }
+  LUSER.set(u.id,m.id);save();lpush(m);return{m:lview(m,u.id)};
 }
-function ludoLeaveId(uid){const m=LUDO.get(LUSER.get(uid));if(!m)return{};const me=m.p.indexOf(uid);if(m.status==='wait'){const u=DB.users.find(x=>x.id===uid);if(u)u.bal+=m.stake;ludoDrop(m);lsend(uid,{type:'none'});}else if(m.status==='play'){ludoEnd(m,(me+1)%m.need,'left');lpush(m);}return{};}
+function ludoLeaveId(uid){const m=LUDO.get(LUSER.get(uid));if(!m)return{};const me=m.p.indexOf(uid);if(m.status==='wait'){ludoDrop(m);lsend(uid,{type:'none'});}else if(m.status==='play'){ludoEnd(m,(me+1)%m.need,'left');}return{};}
+function ludoDecline(uid){const inv=[...LUDO.values()].find(x=>x.status==='wait'&&x.target===uid);if(!inv)return{};const from=inv.p[0];ludoDrop(inv);lsend(uid,{type:'none'});if(from)lsend(from,{type:'invite_declined'});return{};}
 function ludoApi(u,p,b){
   let m=LUDO.get(LUSER.get(u.id));
   if(p==='/ludo/state'){
@@ -125,6 +128,7 @@ function ludoApi(u,p,b){
   }
   if(p==='/ludo/join')return m?{err:'You are already in a match.'}:ludoJoin(u,b.stake,b.players,b.friend,b.accept);
   if(p==='/ludo/leave')return ludoLeaveId(u.id);
+  if(p==='/ludo/decline')return ludoDecline(u.id);
   if(!m||m.status!=='play')return{err:'No active match.'};
   const me=m.p.indexOf(u.id);
   if(p==='/ludo/chat'){const text=String(b.text||'').replace(/[\u0000-\u001f]/g,' ').trim().slice(0,200);if(!text)return{err:'Type a message first.'};m.p.forEach(id=>lsend(id,{type:'chat',from:me,text,t:Date.now()}));return{};}
