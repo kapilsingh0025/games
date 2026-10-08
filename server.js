@@ -83,10 +83,99 @@ function ludoEnd(m,w,why){if(m.status==='done')return;m.status='done';m.win=w;m.
 function ludoRoll(m){const d=rnd(6)+1;m.dice=d;m.sixes=d===6?m.sixes+1:0;m.last={by:m.turn,d,note:''};if(m.sixes>=3){m.last.note='Three sixes in a row - turn lost';m.dice=null;m.sixes=0;m.turn=(m.turn+1)%m.need;}else if(!llegal(m).length){m.last.note='No move possible';m.dice=null;m.sixes=0;m.turn=(m.turn+1)%m.need;}m.turnAt=Date.now();}
 function ludoMove(m,i){const pl=m.turn,d=m.dice,t=m.tk[pl];let extra=d===6,note='';t[i]=t[i]===-1?0:t[i]+d;const s=t[i];if(s===56){extra=true;note='A token reached home';}else if(s<=50&&!LSAFE.has(lcell(pl,s))){let hit=0;for(let q=0;q<m.need;q++){if(q===pl)continue;m.tk[q].forEach((os,j,o)=>{if(os>=0&&os<=50&&lcell(q,os)===lcell(pl,s)){o[j]=-1;hit++;}});}if(hit){extra=true;note='Captured '+hit+(hit>1?' tokens':' token');}}m.last={by:pl,d,note};m.dice=null;m.turnAt=Date.now();if(t.every(x=>x===56))return ludoEnd(m,pl,'won');if(!extra){m.sixes=0;m.turn=(pl+1)%m.need;}}
 function ludoAuto(m){const pl=m.turn;m.idle[pl]++;if(m.idle[pl]>=3){ludoEnd(m,(pl+1)%m.need,'timeout');return lpush(m);}if(!m.dice)ludoRoll(m);if(m.dice){const l=llegal(m);if(l.length)ludoMove(m,l[rnd(l.length)]);else{m.dice=null;m.turn=(pl+1)%m.need;}}m.turnAt=Date.now();lpush(m);}
-function ludoJoin(u,stakeIn,needIn){const c=DB.cfg.games.ldo,st=Math.floor(+stakeIn)||0,need=Math.max(2,Math.min(4,Math.floor(+needIn)||2));if(u.ban)return{err:'Your account is suspended by admin.'};if(!c.on)return{err:'This game is switched off.'};if(st!==0&&!(st>=10&&st<=c.max))return{err:`Stake must be 0 (free game) or between 10 and ${c.max} coins.`};if(st>u.bal)return{err:'Not enough coins. Open Wallet to recharge.'};u.bal-=st;let m=[...LUDO.values()].find(x=>x.status==='wait'&&x.stake===st&&x.need===need&&x.p.length<need&&x.p[0]!==u.id);if(m){m.p.push(u.id);m.n.push(lname(u));m.tk.push([-1,-1,-1,-1]);if(m.p.length===need){if(rnd(2)){m.p.reverse();m.n.reverse();m.tk.reverse();}m.status='play';m.turn=0;m.turnAt=Date.now();}}else{m={id:crypto.randomUUID(),status:'wait',stake:st,need,p:[u.id],n:[lname(u)],tk:[[-1,-1,-1,-1]],turn:0,dice:null,sixes:0,mk:Date.now(),turnAt:Date.now(),idle:[0],last:null,win:-1,pay:0,why:''};LUDO.set(m.id,m);}LUSER.set(u.id,m.id);lesc(m);save();lpush(m);return{m:lview(m,u.id)};}
+function ludoJoin(u,stakeIn,needIn,friend,accept){
+  const c=DB.cfg.games.ldo, st=Math.floor(+stakeIn)||0, need=Math.max(2,Math.min(4,Math.floor(+needIn)||2));
+  if(u.ban)return{err:'Your account is suspended by admin.'};
+  if(!c.on)return{err:'This game is switched off.'};
+  if(st!==0&&!(st>=10&&st<=c.max))return{err:`Stake must be 0 (free game) or between 10 and ${c.max} coins.`};
+  if(st>u.bal)return{err:'Not enough coins.'};
+  if(accept){
+    const m=[...LUDO.values()].find(x=>x.status==='wait'&&x.target===u.id&&x.stake===st&&x.p.length< x.need);
+    if(!m)return{err:'No pending invite for you.'};
+    u.bal-=st; m.p.push(u.id);m.n.push(lname(u));m.tk.push([-1,-1,-1,-1]);
+    delete m.target;
+    if(m.p.length===m.need){if(rnd(2)){m.p.reverse();m.n.reverse();m.tk.reverse();}m.status='play';m.turn=0;m.turnAt=Date.now();}
+    LUSER.set(u.id,m.id);lesc(m);save();lpush(m);return{m:lview(m,u.id)};
+  }
+  const friendName=uname(friend||'');
+  let target=null;
+  if(friendName){
+    target=real().find(x=>x.username===friendName);
+    if(!target)return{err:'Friend username not found.'};
+    if(target.id===u.id)return{err:'You cannot invite yourself.'};
+    const existing=[...LUDO.values()].find(x=>x.status==='wait'&&x.target===target.id&&x.p[0]===u.id);
+    if(existing)return{err:'Invite already sent. Waiting for your friend.'};
+  }
+  u.bal-=st;
+  let m=[...LUDO.values()].find(x=>x.status==='wait'&&!x.target&&x.stake===st&&x.need===need&&x.p.length<need&&x.p[0]!==u.id);
+  if(target)m=null;
+  if(m){m.p.push(u.id);m.n.push(lname(u));m.tk.push([-1,-1,-1,-1]);if(m.p.length===need){if(rnd(2)){m.p.reverse();m.n.reverse();m.tk.reverse();}m.status='play';m.turn=0;m.turnAt=Date.now();}}
+  else{m={id:crypto.randomUUID(),status:'wait',stake:st,need,p:[u.id],n:[lname(u)],tk:[[-1,-1,-1,-1]],turn:0,dice:null,sixes:0,mk:Date.now(),turnAt:Date.now(),idle:[0],last:null,win:-1,pay:0,why:'',target:target?target.id:null,targetName:target?target.username:''};LUDO.set(m.id,m);}
+  LUSER.set(u.id,m.id);lesc(m);save();lpush(m);return{m:lview(m,u.id)};
+}
 function ludoLeaveId(uid){const m=LUDO.get(LUSER.get(uid));if(!m)return{};const me=m.p.indexOf(uid);if(m.status==='wait'){const u=DB.users.find(x=>x.id===uid);if(u)u.bal+=m.stake;ludoDrop(m);lsend(uid,{type:'none'});}else if(m.status==='play'){ludoEnd(m,(me+1)%m.need,'left');lpush(m);}return{};}
-function ludoApi(u,p,b){let m=LUDO.get(LUSER.get(u.id));if(p==='/ludo/join')return m?{err:'You are already in a match.'}:ludoJoin(u,b.stake,b.players);if(p==='/ludo/leave')return ludoLeaveId(u.id);if(!m||m.status!=='play')return{err:'No active match.'};const me=m.p.indexOf(u.id);if(p==='/ludo/chat'){const text=String(b.text||'').replace(/[\u0000-\u001f]/g,' ').trim().slice(0,200);if(!text)return{err:'Type a message first.'};m.p.forEach(id=>lsend(id,{type:'chat',from:me,text,t:Date.now()}));return{};}if(me!==m.turn)return{err:'It is not your turn.'};if(p==='/ludo/roll'){if(m.dice)return{err:'Move a token first.'};m.idle[me]=0;ludoRoll(m);}else if(p==='/ludo/move'){const i=Math.floor(+b.t);if(!m.dice||!llegal(m).includes(i))return{err:'That move is not allowed.'};m.idle[me]=0;ludoMove(m,i);}else return{err:'Unknown action.'};lpush(m);return{};}
+function ludoApi(u,p,b){
+  let m=LUDO.get(LUSER.get(u.id));
+  if(p==='/ludo/state'){
+    if(m)return{m:lview(m,u.id)};
+    const inv=[...LUDO.values()].find(x=>x.status==='wait'&&x.target===u.id);
+    if(inv)return{invite:{status:'invite',id:inv.id,players:inv.need,stake:inv.stake,from:inv.n[0]||'Friend'}};
+    return{};
+  }
+  if(p==='/ludo/join')return m?{err:'You are already in a match.'}:ludoJoin(u,b.stake,b.players,b.friend,b.accept);
+  if(p==='/ludo/leave')return ludoLeaveId(u.id);
+  if(!m||m.status!=='play')return{err:'No active match.'};
+  const me=m.p.indexOf(u.id);
+  if(p==='/ludo/chat'){const text=String(b.text||'').replace(/[\u0000-\u001f]/g,' ').trim().slice(0,200);if(!text)return{err:'Type a message first.'};m.p.forEach(id=>lsend(id,{type:'chat',from:me,text,t:Date.now()}));return{};}
+  if(me!==m.turn)return{err:'It is not your turn.'};
+  if(p==='/ludo/roll'){if(m.dice)return{err:'Move a token first.'};m.idle[me]=0;ludoRoll(m);}
+  else if(p==='/ludo/move'){const i=Math.floor(+b.t);if(!m.dice||!llegal(m).includes(i))return{err:'That move is not allowed.'};m.idle[me]=0;ludoMove(m,i);}
+  else return{err:'Unknown action.'};
+  lpush(m);return{};
+}
 setInterval(()=>{const now=Date.now();for(const m of [...LUDO.values()]){try{if(m.status==='wait'&&now-m.mk>12e4){m.p.forEach(id=>{const u=DB.users.find(x=>x.id===id);if(u)u.bal+=m.stake;});ludoDrop(m);}else if(m.status==='play'&&now-m.turnAt>LTURN)ludoAuto(m);}catch(err){console.error(err);}}},5000).unref();
+const A = {
+  '/admin/adjust': b => {
+    const u = real().find(x => x.id === b.id); if (!u) return { err: 'Player not found.' };
+    const d = Math.max(-1e7, Math.min(1e7, Math.floor(+b.d) || 0)); if (!d) return { err: 'Enter an amount.' };
+    const nb = Math.max(0, u.bal + d), got = nb - u.bal; u.bal = nb; tx(u.id, d > 0 ? 'recharge' : 'admin', got, d > 0 ? 'Admin recharge' : 'Admin deduction'); return { bal: u.bal };
+  },
+  '/admin/clean': b => {
+    const bet = t => t.type === 'win' || t.type === 'loss' || t.type === 'push', n0 = DB.tx.length, r0 = DB.reqs.length, ids = new Set(DB.users.map(u => u.id));
+    if (b.what === 'bets') DB.tx = DB.tx.filter(t => !bet(t));
+    else if (b.what === 'old') { const cut = Date.now() - Math.max(1, Math.min(3650, Math.floor(+b.days) || 30)) * 864e5; DB.tx = DB.tx.filter(t => !(bet(t) && t.t < cut)); }
+    else if (b.what === 'user') { if (!real().some(u => u.id === b.id)) return { err: 'Player not found.' }; DB.tx = DB.tx.filter(t => !(t.uid === b.id && bet(t))); }
+    else if (b.what === 'clean') { const cut = Date.now() - 30 * 864e5; DB.tx = DB.tx.filter(t => ids.has(t.uid) && !(bet(t) && t.t < cut)); DB.reqs = DB.reqs.filter(r => ids.has(r.uid) && r.s === 'pending'); }
+    else return { err: 'Unknown action.' };
+    return { removedTx: n0 - DB.tx.length, removedReqs: r0 - DB.reqs.length };
+  },
+  '/admin/ban': b => { const u = real().find(x => x.id === b.id); if (u) u.ban = !u.ban; },
+  '/admin/delete': b => { ludoLeaveId(b.id); DB.users = DB.users.filter(x => x.isAdmin || x.id !== b.id); DB.reqs = DB.reqs.filter(r => r.uid !== b.id); },
+  '/admin/edit': b => {
+    const u = real().find(x => x.id === b.id); if (!u) return { err: 'Player not found.' };
+    if ('username' in b) { const n = uname(b.username); if (!okUser(n)) return { err: 'Username: 3 to 20 letters, numbers, _ or .' }; if (n === ADMIN_USER || real().some(x => x.id !== u.id && x.username === n)) return { err: 'That username is already taken.' }; u.username = n; }
+    if ('phone' in b) u.phone = String(b.phone).trim().slice(0, 20);
+    if ('email' in b) u.email = String(b.email).trim().slice(0, 80);
+    if ('coins' in b) { const c = Math.max(0, Math.min(1e9, Math.floor(+b.coins) || 0)); if (c !== u.bal) { tx(u.id, 'admin', c - u.bal, 'Admin set balance'); u.bal = c; } }
+  },
+  '/admin/setpw': b => { const u = real().find(x => x.id === b.id); if (!u) return { err: 'Player not found.' }; if (!okPw(b.pw)) return { err: 'Password must be 6 to 64 characters.' }; setPw(u, b.pw); },
+  '/admin/viewpw': b => { const u = real().find(x => x.id === b.id); if (!u) return { err: 'Player not found.' }; if (!u.pe) return { err: 'No password saved for this player. Set a new one.' }; const pw = decPw(u.pe); return pw === null ? { err: 'Cannot read it (server secret changed). Set a new password.' } : { pw }; },
+  '/admin/resolve': b => { const r = DB.reqs.find(x => x.id === b.id); if (r && r.s === 'pending') { r.s = b.ok ? 'approved' : 'rejected'; const u = real().find(x => x.id === r.uid); if (b.ok && u) { u.bal += r.c; tx(u.id, 'recharge', r.c, 'Recharge approved'); } } },
+  '/admin/game': b => { const c = DB.cfg.games[b.id]; if (c) { if ('on' in b) c.on = !!b.on; if ('max' in b) c.max = Math.max(10, Math.floor(+b.max) || 10); if ('wp' in b) c.wp = b.wp === null ? null : Math.max(1, Math.min(100, Math.floor(+b.wp) || 1)); } },
+  '/admin/gameall': b => { const v = b.wp === null ? null : Math.max(1, Math.min(100, Math.floor(+b.wp) || 1)); for (const k in DB.cfg.games) DB.cfg.games[k].wp = v; },
+  '/admin/resolve-withdraw': b => { const r = (DB.wreqs || []).find(x => x.id === b.id); if (!r || r.s !== 'pending') return; r.s = b.ok ? 'approved' : 'rejected'; if (!b.ok) { const u = real().find(x => x.id === r.uid); if (u) { u.bal += r.c; tx(u.id, 'withdraw_refund', r.c, 'Withdrawal rejected - coins returned'); } } },
+  '/admin/cfg': b => {     const L = { edge: [0, 50], signup: [0, 1e6], daily: [0, 1e6], bgo: [0, 90], rmin: [1, 1e6], rmax: [1, 1e7], maxMult: [1, 100] };     if (b.k === 'notice') DB.cfg.notice = String(b.v).slice(0, 120);     else if (L[b.k]) { DB.cfg[b.k] = Math.max(L[b.k][0], Math.min(L[b.k][1], Math.floor(+b.v) || L[b.k][0])); if (DB.cfg.rmin > DB.cfg.rmax) { if (b.k === 'rmax') DB.cfg.rmin = DB.cfg.rmax; else DB.cfg.rmax = DB.cfg.rmin; } }   },
+  '/admin/bg': b => {
+    const m = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/.exec(String(b.data || '')); if (!m) return { err: 'Please choose a JPG, PNG or WebP image.' };
+    const buf = Buffer.from(m[2], 'base64'); if (buf.length > 1.5e6) return { err: 'Image is too large (max 1.5 MB).' };
+    const t = buf[0] === 0xff && buf[1] === 0xd8 ? 'image/jpeg' : buf.slice(1, 4).toString() === 'PNG' ? 'image/png' : buf.slice(0, 4).toString() === 'RIFF' && buf.slice(8, 12).toString() === 'WEBP' ? 'image/webp' : '';
+    if (!t) return { err: 'This file is not a valid image.' };
+    BG = buf; BGT = t; DB.cfg.bgt = t; DB.cfg.bgv = Date.now();
+    try { fs.mkdirSync(DIR, { recursive: true }); fs.writeFileSync(bgFile(), buf); } catch (err) { console.error('Cannot save background file:', err.code || err.message); }
+  },
+  '/admin/bgreset': () => { clearBg(); },
+  '/admin/reset': () => { LUDO.clear(); LUSER.clear(); DB = seed(); clearBg(); }
+};
 const server = http.createServer((req, res) => {
   const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress, url = req.url.split('?')[0];
   res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('X-Frame-Options', 'DENY'); res.setHeader('Referrer-Policy', 'same-origin');
