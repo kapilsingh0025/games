@@ -294,7 +294,45 @@ async function ludoLeave(){const d=await api('/ludo/leave',{});if(!d.ok){toast(d
 async function ludoRoll(){const b=$('#ludo-dice');if(b)b.classList.add('rolling');const d=await api('/ludo/roll',{});if(b)b.classList.remove('rolling');if(!d.ok)toast(d.err||'Roll failed.');else if(d.m){setLudoState(d.m);renderLudoOnly()}}
 async function ludoMove(i){const d=await api('/ludo/move',{t:i});if(!d.ok)toast(d.err||'Move failed.');else {setLudoState(d.m);renderLudoOnly()}}
 async function ludoChat(){const e=$('#lchatin');if(!e||!e.value.trim())return;const text=e.value.trim();const d=await api('/ludo/chat',{text});if(!d.ok)toast(d.err||'Message failed.');else e.value=''}
-async function ludoStream(){if(ludo.stream||!TOKEN)return;const ctl=new AbortController();ludo.stream=ctl;try{const r=await fetch('/api/ludo/stream',{headers:{Authorization:'Bearer '+TOKEN},signal:ctl.signal});if(!r.ok)throw new Error('Ludo event stream returned HTTP '+r.status);ludo.connected=true;if(gid==='ldo')renderLudoOnly();const rd=r.body.getReader(),dec=new TextDecoder();let buf='';while(true){const z=await rd.read();if(z.done)break;buf+=dec.decode(z.value,{stream:true});const parts=buf.split('\\n\\n');buf=parts.pop();for(const part of parts){const line=part.split('\\n').find(x=>x.startsWith('data: '));if(!line)continue;const x=JSON.parse(line.slice(6));if(x.type==='state'){setLudoState(x.m);if(gid==='ldo')renderLudoOnly()}else if(x.type==='invite'){const changed=ludo.m?.id!==x.invite.id;setLudoState(x.invite);if(changed)toast(`${x.invite.from||'A friend'} invited you to Ludo.`);if(gid==='ldo')renderLudoOnly()}else if(x.type==='invite_declined'){toast('Friend declined the Ludo invite.')}else if(x.type==='chat'){ludo.chat.push(x);ludo.chat=ludo.chat.slice(-30);if(gid==='ldo'){const q=$('#lchat');if(q){q.insertAdjacentHTML('beforeend',`<div class="lu-msg"><b>${x.from===ludo.m?.me?'You':(ludo.m?.names[x.from]||'Player')}</b><span>${E(x.text)}</span></div>`);q.scrollTop=q.scrollHeight}}}else if(x.type==='none'){setLudoState(null);if(gid==='ldo')renderLudoOnly()}}}}catch(e){if(!ctl.signal.aborted){ludo.connected=false;console.error('Ludo event stream disconnected:',e);if(gid==='ldo')renderLudoOnly()}}finally{if(!ctl.signal.aborted){ludo.connected=false;if(gid==='ldo')renderLudoOnly()}if(ludo.stream===ctl)ludo.stream=null;if(TOKEN&&!ludo.stream){clearTimeout(ludo.retry);ludo.retry=setTimeout(ludoStream,1500)}}}
+async function ludoStream(){
+ if(ludo.stream||!TOKEN)return;
+ const ctl=new AbortController();ludo.stream=ctl;
+ try{
+  const r=await fetch('/api/ludo/stream',{headers:{Authorization:'Bearer '+TOKEN},signal:ctl.signal});
+  if(!r.ok)throw new Error('Ludo event stream returned HTTP '+r.status);
+  ludo.connected=true;if(gid==='ldo')renderLudoOnly();
+  const rd=r.body.getReader(),dec=new TextDecoder();let buf='';
+  while(true){
+   const z=await rd.read();if(z.done)break;
+   buf+=dec.decode(z.value,{stream:true});
+   const parts=buf.split(/\r?\n\r?\n/);buf=parts.pop();
+   for(const part of parts){
+    const line=part.split(/\r?\n/).find(x=>x.startsWith('data: '));
+    if(!line)continue;
+    const x=JSON.parse(line.slice(6));
+    if(x.type==='state'){setLudoState(x.m);if(gid==='ldo')renderLudoOnly()}
+    else if(x.type==='invite'){
+     const changed=ludo.m?.id!==x.invite.id;setLudoState(x.invite);
+     if(changed)toast(`${x.invite.from||'A friend'} invited you to Ludo.`);
+     if(gid==='ldo')renderLudoOnly()
+    }else if(x.type==='invite_declined')toast('Friend declined the Ludo invite.');
+    else if(x.type==='chat'){
+     ludo.chat.push(x);ludo.chat=ludo.chat.slice(-30);
+     if(gid==='ldo'){
+      const q=$('#lchat');
+      if(q){q.insertAdjacentHTML('beforeend',`<div class="lu-msg"><b>${x.from===ludo.m?.me?'You':(ludo.m?.names[x.from]||'Player')}</b><span>${E(x.text)}</span></div>`);q.scrollTop=q.scrollHeight}
+     }
+    }else if(x.type==='none'){setLudoState(null);if(gid==='ldo')renderLudoOnly()}
+   }
+  }
+ }catch(e){
+  if(!ctl.signal.aborted){ludo.connected=false;console.error('Ludo event stream disconnected:',e);if(gid==='ldo')renderLudoOnly()}
+ }finally{
+  if(!ctl.signal.aborted){ludo.connected=false;if(gid==='ldo')renderLudoOnly()}
+  if(ludo.stream===ctl)ludo.stream=null;
+  if(TOKEN&&!ludo.stream){clearTimeout(ludo.retry);ludo.retry=setTimeout(ludoStream,1500)}
+ }
+}
 setInterval(()=>{if(gid==='ldo'&&ludo.m&&ludo.m.status==='play'){const e=$('#ludo-clock');if(e)e.textContent=`${ludo.m.activePlayers} players · ⏱ ${Math.max(0,Math.ceil((ludo.deadline-Date.now())/1000))}s`;const st=$('#ludo-status');if(st&&ludo.m.turn===ludo.m.me)st.textContent=ludo.m.dice?'Choose a highlighted token':'Your turn — roll the dice'}},250);
 function stageHTML(g,pre){const o=gs.o,id=g.id;
  if(id==='ldo')return ludoHTML();
