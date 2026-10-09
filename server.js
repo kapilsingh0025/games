@@ -71,18 +71,22 @@ function nat(g, x, ed) { // one natural round -> { o: what to show, m: payout mu
 // WIN RULE: any payout above 0x is a win; only 0x is a loss. // mult (K) = the player's chosen winning multiplier, 1x up to cfg.maxMult. Wins become K times rarer and pay K times more, // so the long-run payout stays the same at every multiplier. The player cannot set the difficulty directly: it follows K.
 const r2 = v => Math.round(v * 100) / 100; function play(u, { game, bet, pick, tile, mult }) {   const g = G[game], c = DB.cfg.games[game], b = Math.floor(+bet);   if (!g || g.k === 'ludo') return { err: 'Unknown game.' }; if (u.ban) return { err: 'Your account is suspended by admin.' }; if (!c.on) return { err: 'This game is switched off.' };   if (!(b >= 10 && b <= c.max)) return { err: `Bet between 10 and ${c.max} coins.` }; if (b > u.bal) return { err: 'Not enough coins. Open Wallet to recharge.' };   const ed = DB.cfg.edge / 100, wp = Number.isFinite(c.wp) ? c.wp : null, rf = () => rnd(1e9) / 1e9, K = Math.max(1, Math.min(DB.cfg.maxMult || 10, r2(+mult || 1))), x = { pick: Math.floor(+pick), tile: Math.floor(+tile), tgt: 0 };   if (g.k === 'pick' && !(x.pick >= 0 && x.pick < g.o)) return { err: 'Pick an option.' };   if (g.k === 'tiles' && !(x.tile >= 0 && x.tile < g.t.length)) return { err: 'Pick a tile.' };   if (g.k === 'crash') { x.tgt = g.o[x.pick]; if (!x.tgt) return { err: 'Pick a target.' }; }   const isWin = q => q.m > 0; let r = nat(g, x, ed);   if (wp !== null) { const want = rf() < wp / 100 / K; for (let i = 0; i < 400 && isWin(r) !== want; i++) r = nat(g, x, ed); }   else if (K > 1 && isWin(r) && rf() >= 1 / K) { for (let i = 0; i < 400 && isWin(r); i++) r = nat(g, x, ed); }   const win = isWin(r), m = win ? r.m * K : 0, o = r.o;   if (g.k === 'tiles') o.rev = o.rev.map(v => v > 0 ? r2(v * K) : 0);   const w = win ? Math.max(1, Math.floor(b * m)) : 0; u.bal += w - b; if (!u.isAdmin) { DB.st.w += b; DB.st.p += w; }   tx(u.id, w > 0 ? 'win' : 'loss', w - b, `${g.n} ${r2(m).toFixed(2)}x${K > 1 ? ' (winning multiplier ' + K + 'x)' : ''}`); save();   return { ok: true, w, m: r2(m), o, bal: u.bal, k: K }; } 
 // ---------- Ludo: 2, 3 or 4 players. Live chat is relayed only and never persisted. ----------
-const LUDO = new Map(), LUSER = new Map(), LSSE = new Map(), LSTART = [0, 13, 26, 39], LSAFE = new Set([0, 8, 13, 21, 26, 34, 39, 47]), LTURN = 45000;
+const LUDO = new Map(), LUSER = new Map(), LSSE = new Map(), LDISC = new Map(), LSTART = [0, 13, 26, 39], LSAFE = new Set([0, 8, 13, 21, 26, 34, 39, 47]), LTURN = 45000, LGRACE = 30000;
 const lcell = (pl, s) => (LSTART[pl] + s) % 52, lname = u => u.username || 'player';
 const lsend = (uid, o) => { const st = LSSE.get(uid); if (st) { const d = 'data: ' + JSON.stringify(o) + '\n\n'; st.forEach(r => { try { r.write(d); } catch {} }); } };
+const lactive=m=>m.active||m.p.map(()=>true), lcount=m=>lactive(m).filter(Boolean).length;
+const lnext=(m,from)=>{const active=lactive(m);for(let n=1;n<=m.need;n++){const i=(from+n)%m.need;if(active[i])return i}return from;};
 function llegal(m) { const d=m.dice,out=[]; if(!d)return out; (m.tk[m.turn]||[]).forEach((s,i)=>{if(s===-1?d===6:s+d<=56)out.push(i)}); return out; }
-const lview=(m,uid)=>{const me=m.p.indexOf(uid);return{id:m.id,status:m.status,stake:0,players:m.need,me,names:m.n,targetName:m.targetName||'',meName:m.n[me]||'',tk:m.tk,turn:m.turn,dice:m.dice,legal:m.status==='play'&&me===m.turn?llegal(m):[],last:m.last,win:m.win,pay:0,why:m.why,tl:Math.max(0,Math.ceil((m.turnAt+LTURN-Date.now())/1000))};};
-const lpush=m=>m.p.forEach(id=>lsend(id,{type:'state',m:lview(m,id)}));
+const lview=(m,uid)=>{const me=m.p.indexOf(uid),active=lactive(m);return{id:m.id,status:m.status,stake:0,players:m.need,activePlayers:lcount(m),joined:m.p.filter(Boolean).length,me,names:m.n,active,targetName:m.targetName||'',meName:m.n[me]||'',tk:m.tk,turn:m.turn,dice:m.dice,legal:m.status==='play'&&me===m.turn&&active[me]?llegal(m):[],last:m.last,win:m.win,pay:0,why:m.why,tl:Math.max(0,Math.ceil((m.turnAt+LTURN-Date.now())/1000))};};
+const lpush=m=>m.p.forEach(id=>{if(id)lsend(id,{type:'state',m:lview(m,id)});});
 const lesc=m=>{DB.esc=(DB.esc||[]).filter(e=>e.id!==m.id);if(m.stake&&m.status==='wait'||m.stake&&m.status==='play')DB.esc.push({id:m.id,uids:m.p.slice(),stake:m.stake});};
-function ludoDrop(m){m.status='gone';LUDO.delete(m.id);m.p.forEach(id=>LUSER.delete(id));lesc(m);save();}
-function ludoEnd(m,w,why){if(m.status==='done')return;m.status='done';m.win=w;m.why=why;m.dice=null;m.pay=0;m.p.forEach(id=>LUSER.delete(id));save();lpush(m);setTimeout(()=>LUDO.delete(m.id),6e4).unref();}
-function ludoRoll(m){const d=rnd(6)+1;m.dice=d;m.sixes=d===6?m.sixes+1:0;m.last={by:m.turn,d,note:''};if(m.sixes>=3){m.last.note='Three sixes in a row - turn lost';m.dice=null;m.sixes=0;m.turn=(m.turn+1)%m.need;}else if(!llegal(m).length){m.last.note='No move possible';m.dice=null;m.sixes=0;m.turn=(m.turn+1)%m.need;}m.turnAt=Date.now();}
-function ludoMove(m,i){const pl=m.turn,d=m.dice,t=m.tk[pl];let extra=d===6,note='';if(t[i]===-1){if(d!==6)return;t[i]=0;}else{t[i]+=d;}const s=t[i];if(s===56){extra=true;note='A token reached home';}else if(s<=50&&!LSAFE.has(lcell(pl,s))){let hit=0;for(let q=0;q<m.need;q++){if(q===pl)continue;m.tk[q].forEach((os,j,o)=>{if(os>=0&&os<=50&&lcell(q,os)===lcell(pl,s)){o[j]=-1;hit++;}});}if(hit){extra=true;note='Captured '+hit+(hit>1?' tokens':' token');}}m.last={by:pl,d,note};m.dice=null;m.turnAt=Date.now();if(t.every(x=>x===56))return ludoEnd(m,pl,'won');if(!extra){m.sixes=0;m.turn=(pl+1)%m.need;}}
-function ludoAuto(m){const pl=m.turn;m.idle[pl]++;if(m.idle[pl]>=3){ludoEnd(m,(pl+1)%m.need,'timeout');return lpush(m);}if(!m.dice)ludoRoll(m);if(m.dice){const l=llegal(m);if(l.length)ludoMove(m,l[rnd(l.length)]);else{m.dice=null;m.turn=(pl+1)%m.need;}}m.turnAt=Date.now();lpush(m);}
+function ludoDrop(m){m.status='gone';LUDO.delete(m.id);m.p.forEach(id=>{LUSER.delete(id);lsend(id,{type:'none'});});if(m.target)lsend(m.target,{type:'none'});lesc(m);save();}
+function ludoEnd(m,w,why){if(m.status==='done')return;m.status='done';m.win=w;m.why=why;m.dice=null;m.pay=0;m.p.forEach(id=>{if(id){LUSER.delete(id);clearTimeout(LDISC.get(id));LDISC.delete(id);}});save();lpush(m);setTimeout(()=>LUDO.delete(m.id),6e4).unref();}
+function ludoEliminate(m,pl,why){const active=lactive(m);if(!active[pl])return;const wasTurn=m.turn===pl;active[pl]=false;LUSER.delete(m.p[pl]);m.last={by:pl,d:wasTurn?m.dice||0:0,note:(m.n[pl]||'A player')+' '+(why==='timeout'?'was removed for inactivity':'left the game')};if(wasTurn){m.dice=null;m.sixes=0;}const remaining=active.map((on,i)=>on?i:-1).filter(i=>i>=0);if(remaining.length<=1){ludoEnd(m,remaining[0]??-1,why);return;}if(wasTurn)m.turn=lnext(m,pl);m.turnAt=Date.now();lpush(m);}
+function ludoLeaveId(uid,why='left'){clearTimeout(LDISC.get(uid));LDISC.delete(uid);const m=LUDO.get(LUSER.get(uid));if(!m){ludoDecline(uid);return{};}const me=m.p.indexOf(uid);if(m.status==='wait'){ludoDrop(m);return{};}if(m.status==='play')ludoEliminate(m,me,why);return{};}
+function ludoRoll(m){const d=rnd(6)+1;m.dice=d;m.sixes=d===6?m.sixes+1:0;m.last={by:m.turn,d,note:''};if(m.sixes>=3){m.last.note='Three sixes in a row - turn lost';m.dice=null;m.sixes=0;m.turn=lnext(m,m.turn);}else if(!llegal(m).length){m.last.note='No move possible';m.dice=null;m.sixes=0;m.turn=lnext(m,m.turn);}m.turnAt=Date.now();}
+function ludoMove(m,i){const pl=m.turn,d=m.dice,t=m.tk[pl];let extra=d===6,note='';if(t[i]===-1){if(d!==6)return;t[i]=0;}else{t[i]+=d;}const s=t[i];if(s===56){extra=true;note='A token reached home';}else if(s<=50&&!LSAFE.has(lcell(pl,s))){let hit=0;for(let q=0;q<m.need;q++){if(q===pl||!lactive(m)[q])continue;m.tk[q].forEach((os,j,o)=>{if(os>=0&&os<=50&&lcell(q,os)===lcell(pl,s)){o[j]=-1;hit++;}});}if(hit){extra=true;note='Captured '+hit+(hit>1?' tokens':' token');}}m.last={by:pl,d,note};m.dice=null;m.turnAt=Date.now();if(t.every(x=>x===56))return ludoEnd(m,pl,'won');if(!extra){m.sixes=0;m.turn=lnext(m,pl);}}
+function ludoAuto(m){const pl=m.turn;m.idle[pl]++;if(m.idle[pl]>=3)return ludoEliminate(m,pl,'timeout');if(!m.dice)ludoRoll(m);if(m.dice){const l=llegal(m);if(l.length)ludoMove(m,l[rnd(l.length)]);else{m.dice=null;m.turn=lnext(m,pl);}}m.turnAt=Date.now();lpush(m);}
 function ludoJoin(u,stakeIn,needIn,friend,accept){
   const c=DB.cfg.games.ldo, need=Math.max(2,Math.min(4,Math.floor(+needIn)||2));
   if(u.ban)return{err:'Your account is suspended by admin.'};
@@ -90,9 +94,9 @@ function ludoJoin(u,stakeIn,needIn,friend,accept){
   if(accept){
     const m=[...LUDO.values()].find(x=>x.status==='wait'&&x.target===u.id&&x.p.length<x.need);
     if(!m)return{err:'No pending invite for you.'};
-    m.p.push(u.id);m.n.push(lname(u));m.tk.push([-1,-1,-1,-1]);delete m.target;
-    if(m.p.length===m.need){if(rnd(2)){m.p.reverse();m.n.reverse();m.tk.reverse();}m.status='play';m.turn=0;m.turnAt=Date.now();}
-    LUSER.set(u.id,m.id);save();lpush(m);return{m:lview(m,u.id)};
+    m.p.push(u.id);m.n.push(lname(u));m.tk.push([-1,-1,-1,-1]);m.idle.push(0);m.active.push(true);delete m.target;m.targetName='';
+    if(m.p.length===m.need){if(rnd(2)){m.p.reverse();m.n.reverse();m.tk.reverse();m.idle.reverse();m.active.reverse();}m.status='play';m.turn=0;m.turnAt=Date.now();}
+    LUSER.set(u.id,m.id);LDISC.delete(u.id);save();lpush(m);return{m:lview(m,u.id)};
   }
   const friendName=uname(friend||'');
   let target=null;
@@ -101,22 +105,23 @@ function ludoJoin(u,stakeIn,needIn,friend,accept){
     if(!target)return{err:'Friend username not found.'};
     if(target.id===u.id)return{err:'You cannot invite yourself.'};
     if(LUSER.has(target.id))return{err:'That friend is already in a Ludo match.'};
+    if([...LUDO.values()].some(x=>x.status==='wait'&&x.target===target.id))return{err:'That friend already has a pending Ludo invite.'};
     const existing=[...LUDO.values()].find(x=>x.status==='wait'&&x.target===target.id&&x.p[0]===u.id);
     if(existing)return{err:'Invite already sent. Waiting for your friend.'};
   }
+  if(!accept&&[...LUDO.values()].some(x=>x.status==='wait'&&x.target===u.id))return{err:'Accept or decline your pending Ludo invite first.'};
   let m=[...LUDO.values()].find(x=>x.status==='wait'&&!x.target&&x.need===need&&x.p.length<need&&x.p[0]!==u.id);
   if(target)m=null;
   if(m){
-    m.p.push(u.id);m.n.push(lname(u));m.tk.push([-1,-1,-1,-1]);
-    if(m.p.length===need){if(rnd(2)){m.p.reverse();m.n.reverse();m.tk.reverse();}m.status='play';m.turn=0;m.turnAt=Date.now();}
+    m.p.push(u.id);m.n.push(lname(u));m.tk.push([-1,-1,-1,-1]);m.idle.push(0);m.active.push(true);
+    if(m.p.length===need){if(rnd(2)){m.p.reverse();m.n.reverse();m.tk.reverse();m.idle.reverse();m.active.reverse();}m.status='play';m.turn=0;m.turnAt=Date.now();}
   }else{
-    m={id:crypto.randomUUID(),status:'wait',stake:0,need,p:[u.id],n:[lname(u)],tk:[[-1,-1,-1,-1]],turn:0,dice:null,sixes:0,mk:Date.now(),turnAt:Date.now(),idle:[0],last:null,win:-1,pay:0,why:'',target:target?target.id:null,targetName:target?target.username:''};
+    m={id:crypto.randomUUID(),status:'wait',stake:0,need,p:[u.id],n:[lname(u)],tk:[[-1,-1,-1,-1]],active:[true],turn:0,dice:null,sixes:0,mk:Date.now(),turnAt:Date.now(),idle:[0],last:null,win:-1,pay:0,why:'',target:target?target.id:null,targetName:target?target.username:''};
     LUDO.set(m.id,m);
     if(target)lsend(target.id,{type:'invite',invite:{status:'invite',id:m.id,players:m.need,from:lname(u)}});
   }
-  LUSER.set(u.id,m.id);save();lpush(m);return{m:lview(m,u.id)};
+  LUSER.set(u.id,m.id);LDISC.delete(u.id);save();lpush(m);return{m:lview(m,u.id)};
 }
-function ludoLeaveId(uid){const m=LUDO.get(LUSER.get(uid));if(!m)return{};const me=m.p.indexOf(uid);if(m.status==='wait'){ludoDrop(m);lsend(uid,{type:'none'});}else if(m.status==='play'){ludoEnd(m,(me+1)%m.need,'left');}return{};}
 function ludoDecline(uid){const inv=[...LUDO.values()].find(x=>x.status==='wait'&&x.target===uid);if(!inv)return{};const from=inv.p[0];ludoDrop(inv);lsend(uid,{type:'none'});if(from)lsend(from,{type:'invite_declined'});return{};}
 function ludoApi(u,p,b){
   let m=LUDO.get(LUSER.get(u.id));
@@ -136,7 +141,7 @@ function ludoApi(u,p,b){
   if(p==='/ludo/roll'){if(m.dice)return{err:'Move a token first.'};m.idle[me]=0;ludoRoll(m);}
   else if(p==='/ludo/move'){const i=Math.floor(+b.t);if(!m.dice||!llegal(m).includes(i))return{err:'That move is not allowed.'};m.idle[me]=0;ludoMove(m,i);}
   else return{err:'Unknown action.'};
-  lpush(m);return{};
+  lpush(m);return{m:lview(m,u.id)};
 }
 setInterval(()=>{const now=Date.now();for(const m of [...LUDO.values()]){try{if(m.status==='wait'&&now-m.mk>12e4){m.p.forEach(id=>{const u=DB.users.find(x=>x.id===id);if(u)u.bal+=m.stake;});ludoDrop(m);}else if(m.status==='play'&&now-m.turnAt>LTURN)ludoAuto(m);}catch(err){console.error(err);}}},5000).unref();
 const A = {
@@ -229,8 +234,36 @@ const server = http.createServer((req, res) => {
         ludoLeaveId(u.id); DB.users = DB.users.filter(x => x.id !== u.id); DB.tx = DB.tx.filter(t => t.uid !== u.id); DB.reqs = DB.reqs.filter(r => r.uid !== u.id); save();
         return J(200, { ok: true });
       }
-      if (p === '/ludo/stream') { // live updates for Ludo (server-sent events), also carries the chat
-        req.socket.setTimeout(0); res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });         let set = LSSE.get(u.id); if (!set) LSSE.set(u.id, set = new Set()); set.add(res);         const lm = LUDO.get(LUSER.get(u.id)); res.write('retry: 2000\n\ndata: ' + JSON.stringify(lm ? { type: 'state', m: lview(lm, u.id) } : { type: 'none' }) + '\n\n');         const hb = setInterval(() => { try { res.write(': hb\n\n'); } catch {} }, 15000);         res.on('close', () => { clearInterval(hb); set.delete(res); if (!set.size && LSSE.get(u.id) === set) LSSE.delete(u.id); });         return;       }       if (p.startsWith('/ludo/')) { if (limited('g:' + u.id, 150)) return J(429, { ok: false, err: 'Too many requests. Wait a moment.' }); const r = ludoApi(u, p, b); return J(200, r.err ? { ok: false, err: r.err } : { ok: true, ...r }); }       if (p === '/play') { const r = play(u, b); return J(200, r.err ? { ok: false, err: r.err } : r); }
+      if (p === '/ludo/stream') {
+        req.socket.setTimeout(0);
+        res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
+        clearTimeout(LDISC.get(u.id));
+        LDISC.delete(u.id);
+        let set = LSSE.get(u.id);
+        if (!set) LSSE.set(u.id, set = new Set());
+        set.add(res);
+        const lm = LUDO.get(LUSER.get(u.id));
+        const invite = lm ? null : [...LUDO.values()].find(x => x.status === 'wait' && x.target === u.id);
+        const initial = lm ? { type: 'state', m: lview(lm, u.id) } : invite ? { type: 'invite', invite: { status: 'invite', id: invite.id, players: invite.need, from: invite.n[0] || 'Friend' } } : { type: 'none' };
+        res.write('retry: 2000\n\ndata: ' + JSON.stringify(initial) + '\n\n');
+        const hb = setInterval(() => { try { res.write(': hb\n\n'); } catch {} }, 15000);
+        res.on('close', () => {
+          clearInterval(hb);
+          set.delete(res);
+          if (set.size || LSSE.get(u.id) !== set) return;
+          LSSE.delete(u.id);
+          const activeMatch = LUDO.get(LUSER.get(u.id));
+          if (!activeMatch || activeMatch.status !== 'play') return;
+          const timer = setTimeout(() => {
+            LDISC.delete(u.id);
+            if (!LSSE.has(u.id)) ludoLeaveId(u.id, 'disconnect');
+          }, LGRACE);
+          LDISC.set(u.id, timer);
+          timer.unref();
+        });
+        return;
+      }
+      if (p.startsWith('/ludo/')) { if (limited('g:' + u.id, 150)) return J(429, { ok: false, err: 'Too many requests. Wait a moment.' }); const r = ludoApi(u, p, b); return J(200, r.err ? { ok: false, err: r.err } : { ok: true, ...r }); }       if (p === '/play') { const r = play(u, b); return J(200, r.err ? { ok: false, err: r.err } : r); }
       if (p === '/daily') { if (Date.now() - u.last < 864e5 || u.ban) return J(200, { ok: false, err: 'Come back tomorrow.' }); u.last = Date.now(); u.bal += DB.cfg.daily; tx(u.id, 'bonus', DB.cfg.daily, 'Daily bonus'); save(); return J(200, { ok: true }); }
       if (p === '/recharge') {
         const c = Math.floor(+b.coins), lo = DB.cfg.rmin || 10, hi = DB.cfg.rmax || 100000;
